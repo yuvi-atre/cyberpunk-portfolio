@@ -32,6 +32,11 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
           LINKEDIN ↗
         </a>
       </div>
+
+      <p className="font-body mt-5 text-base leading-snug" style={{ color: 'var(--text-secondary)' }}>
+        Built with love as a non-commercial fan tribute to the aesthetic of Terraria (© Re-Logic).
+        All art here is CC0/openly licensed or original — see the repository for full attribution.
+      </p>
     </Modal>
   );
 }

@@ -31,6 +31,20 @@ Guide", annotated with what this project adopts and why. Companion to
   portfolio.
 - **Current source:** Kenney Pixel Platformer packs (CC0) composited with
   procedural overlays at boot. CC0 requires nothing and permits everything.
+- **Character sprites:** GrafxKid's "Classic Hero" (CC0, OpenGameArt) — idle,
+  run and jump frames; NPC variants are palette-swapped at boot
+  (`src/assets/grafxkid/`).
+- **Fan-tribute framing:** the in-game About panel carries a respectful
+  disclaimer crediting Re-Logic for the aesthetic inspiration. Mimicking a
+  *style* is fine; shipping their *files* is not — the disclaimer does not
+  substitute for a license.
+- **Curated index:** UkoeHB's gamedev free-assets gist
+  (https://gist.github.com/UkoeHB/9991c1a60e887e448800ed2f740a037a) — a good
+  starting point for CC0 fonts, tilesets, audio and palettes.
+- **Verified open Terraria-likes:** `CPhlebas/ore-chasm` is a real GPLv2+
+  open-source project with free-licensed assets (its tiles/mascot don't fit
+  this project's needs, but it is a legitimate source, unlike ripped-asset
+  repos).
 - **Vetted upgrade paths** if more variety is wanted later:
   - OpenGameArt CC0 tilesets (GrafxKid's Cave Tileset and similar).
   - `VerdantMod` cave flora (GPLv3 — only if the project accepts GPL asset

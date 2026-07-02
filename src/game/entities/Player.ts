@@ -35,7 +35,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    this.setSize(10, 22).setOffset(3, 2);
+    this.setSize(10, 13).setOffset(3, 3);
     this.setCollideWorldBounds(true);
     this.setDepth(20);
     if (scene.game.renderer.type === Phaser.WEBGL) this.setPipeline('Light2D');
@@ -49,13 +49,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     if (!scene.anims.exists('player-walk')) {
       scene.anims.create({
         key: 'player-walk',
-        frames: [1, 2, 3, 2].map((f) => ({ key: 'player', frame: f })),
-        frameRate: 8,
+        frames: [1, 2, 3, 4].map((f) => ({ key: 'player', frame: f })),
+        frameRate: 10,
         repeat: -1,
       });
       scene.anims.create({
         key: 'player-idle',
         frames: [{ key: 'player', frame: 0 }],
+      });
+      scene.anims.create({
+        key: 'player-jump',
+        frames: [{ key: 'player', frame: 5 }],
       });
     }
 
@@ -110,7 +114,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       }
     }
 
-    if (body.velocity.x !== 0 && (body.blocked.down || this.inWater)) {
+    if (!body.blocked.down && !this.inWater) {
+      this.anims.play('player-jump', true);
+    } else if (body.velocity.x !== 0) {
       this.anims.play('player-walk', true);
     } else {
       this.anims.play('player-idle', true);

@@ -6,6 +6,7 @@ import kenneyRockUrl from '../../assets/kenney/rock_packed.png';
 import kenneyStoneUrl from '../../assets/kenney/stone_packed.png';
 import kenneySandUrl from '../../assets/kenney/sand_packed.png';
 import kenneyMarbleUrl from '../../assets/kenney/marble_packed.png';
+import heroUrl from '../../assets/grafxkid/classic-hero.png';
 
 /**
  * Builds the game tileset by compositing Kenney's CC0 Pixel Platformer art
@@ -62,14 +63,15 @@ export class BootScene extends Phaser.Scene {
     this.load.image('kenney-stone', kenneyStoneUrl);
     this.load.image('kenney-sand', kenneySandUrl);
     this.load.image('kenney-marble', kenneyMarbleUrl);
+    this.load.image('hero-sheet', heroUrl);
   }
 
   create(): void {
     this.makeTileset();
-    this.makeCharacter('player', { shirt: '#3a7bd5', pants: '#5a3d28', hair: '#6b4423', skin: '#eab387' });
-    this.makeCharacter('npc-0', { shirt: '#8e44ad', pants: '#2c3e50', hair: '#4a4a4a', skin: '#e8c39e' });
-    this.makeCharacter('npc-1', { shirt: '#c0392b', pants: '#34495e', hair: '#2c2c2c', skin: '#d9a066' });
-    this.makeCharacter('npc-2', { shirt: '#d4a017', pants: '#4a3520', hair: '#e8e8e8', skin: '#eab387' });
+    this.makeHeroTexture('player'); // original blue shirt
+    this.makeHeroTexture('npc-0', [142, 68, 173]); // purple
+    this.makeHeroTexture('npc-1', [192, 57, 43]); // red
+    this.makeHeroTexture('npc-2', [212, 160, 23]); // gold
     this.makeParticle();
     this.makeSky();
     this.makeSun();
@@ -304,50 +306,49 @@ export class BootScene extends Phaser.Scene {
   }
 
   // ------------------------------------------------------------- characters
-  private makeCharacter(
-    key: string,
-    p: { shirt: string; pants: string; hair: string; skin: string }
-  ): void {
-    const FRAMES = 4;
-    const W = 16;
-    const H = 24;
-    const ctx = this.ctxFor(key, W * FRAMES, H);
-    for (let f = 0; f < FRAMES; f++) {
-      ctx.save();
-      ctx.translate(f * W, 0);
-      // hair + head
-      ctx.fillStyle = p.hair;
-      ctx.fillRect(4, 0, 8, 3);
-      ctx.fillRect(3, 1, 2, 4);
-      ctx.fillStyle = p.skin;
-      ctx.fillRect(5, 3, 7, 5);
-      ctx.fillStyle = '#222';
-      ctx.fillRect(10, 4, 1, 2); // eye (faces right)
-      // torso + arms
-      ctx.fillStyle = p.shirt;
-      ctx.fillRect(4, 8, 8, 7);
-      const armSwing = f === 1 ? 1 : f === 3 ? -1 : 0;
-      ctx.fillRect(3 - armSwing, 9, 2, 5);
-      ctx.fillRect(11 + armSwing, 9, 2, 5);
-      ctx.fillStyle = p.skin;
-      ctx.fillRect(3 - armSwing, 13, 2, 2);
-      ctx.fillRect(11 + armSwing, 13, 2, 2);
-      // legs: 4 frames = idle, step L, pass, step R
-      ctx.fillStyle = p.pants;
-      const legOff = f === 1 ? 2 : f === 3 ? -2 : 0;
-      ctx.fillRect(5 + Math.min(0, legOff), 15, 3, 8);
-      ctx.fillRect(9 + Math.max(0, legOff), 15, 3, 8);
-      // boots
-      ctx.fillStyle = '#3c2a18';
-      ctx.fillRect(5 + Math.min(0, legOff), 22, 3, 2);
-      ctx.fillRect(9 + Math.max(0, legOff), 22, 3, 2);
-      ctx.restore();
+  /**
+   * Builds a character strip from GrafxKid's CC0 "Classic Hero" sheet:
+   * frame 0 idle, 1-4 run cycle, 5 jump. NPC variants palette-swap the blue
+   * shirt to their own color, preserving shading.
+   */
+  private makeHeroTexture(key: string, shirt?: [number, number, number]): void {
+    const F = 16; // source frame size
+    // (col,row) cells in the source sheet: idle, run x4, jump
+    const frames: Array<[number, number]> = [
+      [1, 1],
+      [1, 2],
+      [2, 2],
+      [3, 2],
+      [4, 2],
+      [1, 3],
+    ];
+    const ctx = this.ctxFor(key, F * frames.length, F);
+    ctx.imageSmoothingEnabled = false;
+    const src = this.sourceImage('hero-sheet');
+    frames.forEach(([c, r], i) => {
+      ctx.drawImage(src, c * F, r * F, F, F, i * F, 0, F, F);
+    });
+
+    if (shirt) {
+      const img = ctx.getImageData(0, 0, F * frames.length, F);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const [r, g, b, a] = [d[i], d[i + 1], d[i + 2], d[i + 3]];
+        // shirt pixels: saturated blue, bright enough to exclude the outline
+        if (a > 0 && b > 90 && b > r + 25 && b > g + 20) {
+          const v = b / 222; // luminance ratio vs the shirt's brightest blue
+          d[i] = Math.min(255, shirt[0] * v);
+          d[i + 1] = Math.min(255, shirt[1] * v);
+          d[i + 2] = Math.min(255, shirt[2] * v);
+        }
+      }
+      ctx.putImageData(img, 0, 0);
     }
+
     this.refresh(key);
-    // register frames on the canvas texture
     const tex = this.textures.get(key);
-    for (let f = 0; f < FRAMES; f++) {
-      tex.add(f, 0, f * W, 0, W, H);
+    for (let i = 0; i < frames.length; i++) {
+      tex.add(i, 0, i * F, 0, F, F);
     }
   }
 

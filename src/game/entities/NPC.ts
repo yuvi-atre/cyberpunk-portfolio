@@ -17,7 +17,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     super(scene, x, y, texture, 0);
     scene.add.existing(this);
     scene.physics.add.existing(this);
-    this.setSize(10, 22).setOffset(3, 2);
+    this.setSize(10, 13).setOffset(3, 3);
     this.setDepth(19);
     if (scene.game.renderer.type === Phaser.WEBGL) this.setPipeline('Light2D');
 
@@ -39,8 +39,8 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
     if (!scene.anims.exists(`${texture}-walk`)) {
       scene.anims.create({
         key: `${texture}-walk`,
-        frames: [1, 2, 3, 2].map((f) => ({ key: texture, frame: f })),
-        frameRate: 6,
+        frames: [1, 2, 3, 4].map((f) => ({ key: texture, frame: f })),
+        frameRate: 8,
         repeat: -1,
       });
       scene.anims.create({ key: `${texture}-idle`, frames: [{ key: texture, frame: 0 }] });
@@ -67,6 +67,6 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
       this.anims.play(`${this.texture.key}-idle`, true);
     }
 
-    this.label.setPosition(this.x, this.y - 14);
+    this.label.setPosition(this.x, this.y - 11);
   }
 }
