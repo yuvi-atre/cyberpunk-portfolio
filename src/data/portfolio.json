@@ -1,0 +1,123 @@
+{
+  "personal": {
+    "name": "Your Name",
+    "title": "Full Stack Systems Engineer",
+    "tagline": "I build performant systems and playful interfaces.",
+    "contact": "atre.7@buckeyemail.osu.edu",
+    "github": "https://github.com/yourhandle",
+    "linkedin": "https://www.linkedin.com/in/yourhandle",
+    "location": "Columbus, OH"
+  },
+  "about": [
+    "Welcome to my world — literally. I'm a software engineer studying at The Ohio State University.",
+    "Every hill, cave and castle here is generated from a deterministic Perlin-noise seed, and every ore you mine is a real skill from my resume.",
+    "Head right to explore my career: the castle holds my flagship work, the desert hides legacy systems, and the deep caves hold raw technical skills."
+  ],
+  "skills": [
+    { "id": "typescript", "displayName": "TypeScript", "tier": "advanced", "blockType": "ore_gold", "spawnDepth": [8, 40], "abundance": 14, "description": "Strict typing across full-stack apps, generics, and compiler-driven refactoring." },
+    { "id": "react", "displayName": "React 18", "tier": "advanced", "blockType": "ore_gold", "spawnDepth": [6, 35], "abundance": 14, "description": "Hooks, concurrent features, performance profiling, and design-system components." },
+    { "id": "python", "displayName": "Python", "tier": "advanced", "blockType": "ore_silver", "spawnDepth": [15, 60], "abundance": 16, "description": "Data pipelines, scripting, FastAPI services, and algorithm implementation." },
+    { "id": "phaser", "displayName": "Phaser 3", "tier": "intermediate", "blockType": "ore_silver", "spawnDepth": [10, 50], "abundance": 10, "description": "WebGL 2D rendering, arcade physics, chunked tilemaps — this very world runs on it." },
+    { "id": "aws", "displayName": "AWS Infrastructure", "tier": "advanced", "blockType": "crystal_blue", "spawnDepth": [40, 90], "abundance": 8, "description": "Lambda, S3, CloudFront, IAM — serverless architectures and CDN deployment." },
+    { "id": "node", "displayName": "Node.js", "tier": "advanced", "blockType": "ore_silver", "spawnDepth": [12, 55], "abundance": 12, "description": "Express/Fastify APIs, streaming, worker threads, and build tooling." },
+    { "id": "sql", "displayName": "SQL & Databases", "tier": "intermediate", "blockType": "crystal_blue", "spawnDepth": [45, 100], "abundance": 9, "description": "Postgres schema design, query optimization, and migrations." },
+    { "id": "docker", "displayName": "Docker & CI/CD", "tier": "intermediate", "blockType": "ore_emerald", "spawnDepth": [25, 70], "abundance": 10, "description": "Containerized builds, GitHub Actions pipelines, and automated deployment." },
+    { "id": "java", "displayName": "Java", "tier": "intermediate", "blockType": "ore_copper", "spawnDepth": [10, 45], "abundance": 12, "description": "Object-oriented design, data structures, and coursework foundations." },
+    { "id": "csharp", "displayName": "C#", "tier": "familiar", "blockType": "ore_copper", "spawnDepth": [20, 60], "abundance": 8, "description": "Game scripting and .NET fundamentals." }
+  ],
+  "experience": [
+    {
+      "id": "manager-castle",
+      "npcName": "The Castellan",
+      "role": "Engineering Manager — Flagship Co.",
+      "zone": "castle",
+      "dialogue": [
+        "Ah, a visitor! I oversaw this developer's work on our flagship platform.",
+        "They shipped features used by thousands of users and never missed a sprint commitment.",
+        "The castle you stand before? A monument to that work. Step through the gate to see it."
+      ]
+    },
+    {
+      "id": "mentor-house",
+      "npcName": "The Mentor",
+      "role": "Senior Engineer — First Internship",
+      "zone": "house",
+      "dialogue": [
+        "Welcome, traveler! I mentored this developer during their first internship.",
+        "They arrived knowing syntax and left understanding systems — the difference matters.",
+        "Explore the caves below to see the skills they mined along the way."
+      ]
+    },
+    {
+      "id": "professor-pyramid",
+      "npcName": "The Archivist",
+      "role": "Professor — The Ohio State University",
+      "zone": "pyramid",
+      "dialogue": [
+        "These sands hold the old systems... COBOL-era schemas, monoliths, legacy APIs.",
+        "This developer learned to respect what came before while building what comes next.",
+        "The pyramid holds coursework artifacts. Mind the cacti."
+      ]
+    }
+  ],
+  "signs": [
+    { "id": "sign-welcome", "zone": "spawn", "text": "← You are here. Walk right with A/D or arrows. SPACE to jump, CLICK to mine, E to interact." },
+    { "id": "sign-graveyard", "zone": "graveyard", "text": "R.I.P. — jQuery spaghetti (2019), PHP 5 sites (2020), FTP deployments (2021). Gone, learned from." },
+    { "id": "sign-castle", "zone": "castle", "text": "⚔ Flagship Projects — press E at the castle gate to view the portfolio." },
+    { "id": "sign-desert", "zone": "desert", "text": "☀ Legacy Systems Desert — backend architecture & databases buried in the pyramid." },
+    { "id": "sign-ocean", "zone": "ocean", "text": "⛵ The Open Sea — future goals & open source. The voyage continues..." },
+    { "id": "sign-mines", "zone": "underground", "text": "⛏ Skill Mines — break glowing ore blocks to collect skills into your inventory (I)." }
+  ],
+  "projects": [
+    {
+      "id": "flagship",
+      "name": "Flagship Enterprise Platform",
+      "structure": "castle",
+      "period": "2024 — Present",
+      "summary": "A production web platform serving real users, with CI/CD, monitoring, and a component design system.",
+      "highlights": [
+        "Cut deployment time by 40% by rebuilding the CI pipeline in GitHub Actions",
+        "Designed a typed event bus decoupling three frontend teams' code",
+        "Led performance work that took p95 page load from 4.2s to 1.1s"
+      ],
+      "tech": ["TypeScript", "React", "Node.js", "AWS", "Postgres"],
+      "link": "https://github.com/yourhandle/flagship",
+      "live": ""
+    },
+    {
+      "id": "this-portfolio",
+      "name": "This Portfolio (Meta!)",
+      "structure": "house",
+      "period": "2026",
+      "summary": "The world you are standing in: deterministic Perlin-noise terrain, chunk streaming, Light2D caves, and a React/Phaser event-bus architecture.",
+      "highlights": [
+        "Chunked tilemap streaming keeps memory flat on an effectively large world",
+        "Perlin noise with constant seed — same world every visit, zero randomness",
+        "Hybrid rendering: WebGL game canvas under an accessible React DOM overlay"
+      ],
+      "tech": ["Phaser 3", "React 18", "TypeScript", "Vite", "Tailwind", "GSAP"],
+      "link": "https://github.com/yourhandle/terraria-portfolio",
+      "live": ""
+    },
+    {
+      "id": "legacy-migration",
+      "name": "Legacy Systems Migration",
+      "structure": "pyramid",
+      "period": "2023 — 2024",
+      "summary": "Migrated a monolithic legacy backend to typed, containerized services without downtime.",
+      "highlights": [
+        "Strangler-fig migration of 12 endpoints with zero downtime",
+        "Wrote the data-integrity test harness that caught 3 silent corruption bugs",
+        "Documented the old schema so well the archaeologists sent thanks"
+      ],
+      "tech": ["Python", "Docker", "SQL", "FastAPI"],
+      "link": "https://github.com/yourhandle/legacy-migration",
+      "live": ""
+    }
+  ],
+  "futureGoals": [
+    "Ship an open-source Phaser chunk-streaming plugin",
+    "Contribute to the TypeScript compiler",
+    "Explore WebGPU rendering for 2D games"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "terraria-portfolio",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A Terraria-style interactive portfolio built with Phaser 3, React 18, TypeScript, Vite, Tailwind CSS and GSAP.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "gsap": "^3.12.5",
+    "phaser": "^3.90.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "tailwindcss": "^4.1.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.0"
+  }
+}
