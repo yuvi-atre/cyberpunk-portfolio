@@ -45,7 +45,7 @@ src/
     EventBus.ts         Sole communication broker between React and Phaser
     main.ts             Phaser config (Arcade physics, RESIZE scale, Light2D)
     scenes/
-      BootScene.ts      Procedural texture generation (tileset, sprites, parallax)
+      BootScene.ts      Tileset compositing (Kenney CC0 art + procedural overlays)
       GameScene.ts      Orchestrator: mining, interaction, lighting, streaming
     world/
       PerlinNoise.ts    Seeded gradient noise + fBm octaves (no Math.random)
@@ -66,6 +66,14 @@ Key invariants (see the PRD and `DESIGN.md`):
 - **EventBus only.** React never reaches into Phaser objects and vice versa.
 - **Content is decoupled.** Updating the resume means editing `src/data/portfolio.json`
   and pushing; CI redeploys the world.
+
+## Art & licensing
+
+Terrain and structure tiles come from Kenney's **Pixel Platformer** packs
+(Creative Commons Zero — see [src/assets/kenney/ATTRIBUTION.md](src/assets/kenney/ATTRIBUTION.md)).
+Characters, torches, banners, ore overlays and parallax backdrops are generated
+procedurally at boot. Do not swap in sprites ripped from commercial games
+(e.g. Terraria) — they are copyrighted, and this is a public portfolio.
 
 ## Customizing
 

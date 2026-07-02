@@ -82,8 +82,8 @@ export function buildHouse(): Structure {
   // interior torches
   b.set(4, 2, Tile.TORCH).set(10, 2, Tile.TORCH).set(4, 6, Tile.TORCH).set(10, 6, Tile.TORCH);
   // doors on both walls so the ground floor is a walk-through
-  b.set(14, 7, Tile.DOOR).set(14, 8, Tile.DOOR);
-  b.set(0, 7, Tile.DOOR).set(0, 8, Tile.DOOR);
+  b.set(14, 7, Tile.DOOR_TOP).set(14, 8, Tile.DOOR);
+  b.set(0, 7, Tile.DOOR_TOP).set(0, 8, Tile.DOOR);
   b.marker('project', 'house', 14, 8);
   b.marker('npc', 'mentor-house', 19, 8);
   return b.build();
@@ -124,7 +124,7 @@ export function buildCastle(): Structure {
   b.set(12, 13, Tile.GLASS).set(28, 13, Tile.GLASS);
   // gate: carved opening with a raised portcullis (door tiles) and torches
   b.fillRect(18, 15, 5, 6, Tile.AIR);
-  for (let x = 18; x <= 22; x++) b.set(x, 15, Tile.DOOR);
+  for (let x = 18; x <= 22; x++) b.set(x, 15, Tile.DOOR_TOP);
   b.set(18, 17, Tile.TORCH).set(22, 17, Tile.TORCH);
   b.marker('project', 'castle', 20, 19);
   b.marker('npc', 'manager-castle', -5, 21);
@@ -157,7 +157,7 @@ export function buildBasement(): Structure {
   b.room(0, 0, 17, 9, Tile.RED_BRICK);
   // room divider with a doorway
   b.fillRect(8, 1, 1, 7, Tile.RED_BRICK);
-  b.set(8, 6, Tile.DOOR).set(8, 7, Tile.DOOR);
+  b.set(8, 6, Tile.DOOR_TOP).set(8, 7, Tile.DOOR);
   b.set(3, 3, Tile.TORCH).set(12, 3, Tile.TORCH);
   b.set(14, 7, Tile.CHEST);
   b.set(4, 7, Tile.SIGN);

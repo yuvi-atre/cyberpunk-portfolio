@@ -2,7 +2,7 @@
  * Tile registry. Every block in the world is an integer index into the
  * procedurally generated tileset texture (see BootScene). -1 means air.
  */
-export const TILE_SIZE = 16;
+export const TILE_SIZE = 18; // matches Kenney Pixel Platformer tile size
 
 export enum Tile {
   AIR = -1,
@@ -38,9 +38,10 @@ export enum Tile {
   BANNER_YELLOW = 29,
   DARK_STONE = 30,
   STONE_SLAB = 31,
+  DOOR_TOP = 32,
 }
 
-export const TILE_COUNT = 32;
+export const TILE_COUNT = 33;
 
 /** Tiles the player collides with. */
 export const SOLID_TILES: number[] = [
@@ -66,7 +67,13 @@ export const SOLID_TILES: number[] = [
 ];
 
 /** Tiles that can never be mined. */
-export const UNBREAKABLE_TILES: number[] = [Tile.BEDROCK, Tile.DOOR, Tile.CHEST, Tile.SIGN];
+export const UNBREAKABLE_TILES: number[] = [
+  Tile.BEDROCK,
+  Tile.DOOR,
+  Tile.DOOR_TOP,
+  Tile.CHEST,
+  Tile.SIGN,
+];
 
 /** Ore tile ids — mining these yields a skill item. */
 export const ORE_TILES: number[] = [
@@ -120,4 +127,5 @@ export const TILE_COLORS: Record<number, { base: string; accent: string; dark: s
   [Tile.BANNER_YELLOW]: { base: '#c8a020', accent: '#e8c040', dark: '#a08018' },
   [Tile.DARK_STONE]: { base: '#45454f', accent: '#565660', dark: '#33333b' },
   [Tile.STONE_SLAB]: { base: '#8a8a95', accent: '#9c9ca8', dark: '#6f6f7a' },
+  [Tile.DOOR_TOP]: { base: '#75492a', accent: '#8a5c33', dark: '#5c3820' },
 };
