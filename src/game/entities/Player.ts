@@ -11,7 +11,7 @@ const DASH_MS = 220;
 const DASH_COOLDOWN_MS = 700;
 
 /**
- * Kinematic player controller on Arcade Physics driving the CraftPix Punk
+ * Kinematic player controller on Arcade Physics driving the CraftPix Biker
  * (48x48 frames, ~30px-tall body). Reads native keyboard input and
  * synthesized mobile input from the EventBus through the same abstraction,
  * so gameplay logic is hardware-agnostic. Supports run, jump, double jump,

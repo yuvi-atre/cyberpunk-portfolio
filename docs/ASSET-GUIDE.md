@@ -26,7 +26,7 @@ Companion to `DESIGN.md` (visual tokens) and `src/assets/craftpix/ATTRIBUTION.md
   `src/assets/craftpix/` with clean names. The CraftPix free license permits use
   in games (commercial included); redistribution of raw assets as assets is not
   permitted — which is fine, they ship compiled into the game bundle.
-- Player: "Free 3 Cyberpunk Characters" Punk + "Free Extra Animations" (48px
+- Player: "Free 3 Cyberpunk Characters" Biker + "Free Extra Animations" (48px
   frames — taller than the 32px tile grid; the physics body is 14x30 anchored
   to the sprite's feet).
 - Tiles the packs don't cover (holo signs, coolant, data-node glows, street

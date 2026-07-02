@@ -86,5 +86,5 @@ Key invariants (see the PRD and `DESIGN.md`):
    depths), experience (NPC dialogue), holo-signs, projects and future goals.
 2. Optional: drop a cinematic intro video at `public/intro.mp4` (e.g. generated with
    Higgsfield from a city reference image) — the loading screen plays it automatically.
-3. Push to `main` — the GitHub Actions workflow builds and deploys to GitHub Pages
-   (enable **Settings → Pages → Source: GitHub Actions** once).
+3. Push to `main` — Vercel is connected to this repo and auto-deploys production on
+   every push.
