@@ -67,14 +67,6 @@ Key invariants (see the PRD and `DESIGN.md`):
 - **Content is decoupled.** Updating the resume means editing `src/data/portfolio.json`
   and pushing; CI redeploys the world.
 
-## Art & licensing
-
-Terrain and structure tiles come from Kenney's **Pixel Platformer** packs
-(Creative Commons Zero — see [src/assets/kenney/ATTRIBUTION.md](src/assets/kenney/ATTRIBUTION.md)).
-Characters, torches, banners, ore overlays and parallax backdrops are generated
-procedurally at boot. Do not swap in sprites ripped from commercial games
-(e.g. Terraria) — they are copyrighted, and this is a public portfolio.
-
 ## Customizing
 
 1. Edit `src/data/portfolio.json` — name, links, skills (with ore types + spawn depths),
