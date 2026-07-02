@@ -52,6 +52,8 @@ export interface GeneratedWorld {
   width: number;
   height: number;
   data: Int16Array;
+  /** background wall per cell (-1 = none); rendered behind the terrain layer */
+  walls: Int16Array;
   /** surface row per column */
   surface: number[];
   /** tile index (ty * width + tx) -> skill id */
@@ -70,10 +72,14 @@ export function generateWorld(): GeneratedWorld {
   const W = WORLD_WIDTH;
   const H = WORLD_HEIGHT;
   const data = new Int16Array(W * H).fill(Tile.AIR);
+  const walls = new Int16Array(W * H).fill(Tile.AIR);
   const oreMap = new Map<number, string>();
   const markers: WorldMarker[] = [];
 
   const idx = (x: number, y: number) => y * W + x;
+  const setWall = (x: number, y: number, t: number) => {
+    if (x >= 0 && x < W && y >= 0 && y < H) walls[idx(x, y)] = t;
+  };
   const get = (x: number, y: number) =>
     x < 0 || x >= W || y < 0 || y >= H ? Tile.BEDROCK : data[idx(x, y)];
   const set = (x: number, y: number, t: number) => {
@@ -116,6 +122,13 @@ export function generateWorld(): GeneratedWorld {
       else if (y <= s + 5) set(x, y, sandy ? Tile.SAND : Tile.DIRT);
       else if (sandy && y <= s + 14) set(x, y, Tile.SANDSTONE);
       else set(x, y, Tile.STONE);
+      // background wall: caves and mined tunnels must never show sky
+      if (y > s) {
+        const depth = y - s;
+        if (sandy && depth <= 14) setWall(x, y, Tile.WALL_SANDSTONE);
+        else if (depth <= 18) setWall(x, y, Tile.WALL_DIRT);
+        else setWall(x, y, Tile.WALL_STONE);
+      }
     }
     // ocean water above the sea floor
     if (s > WATER_LEVEL) {
@@ -233,7 +246,10 @@ export function generateWorld(): GeneratedWorld {
     for (let y = 0; y < st.height; y++) {
       for (let x = 0; x < st.width; x++) {
         const c = st.cells[y][x];
-        if (c !== NOOP) set(ox + x, oy + y, c);
+        if (c === NOOP) continue;
+        set(ox + x, oy + y, c);
+        // interiors get the structure's own wall material behind them
+        if (st.wallTile !== undefined) setWall(ox + x, oy + y, st.wallTile);
       }
     }
     for (const m of st.markers) {
@@ -286,6 +302,7 @@ export function generateWorld(): GeneratedWorld {
     width: W,
     height: H,
     data,
+    walls,
     surface,
     oreMap,
     markers,

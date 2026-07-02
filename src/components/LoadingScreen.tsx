@@ -54,7 +54,7 @@ export function LoadingScreen({ onEnter }: { onEnter: () => void }) {
       ref={rootRef}
       className="scanlines absolute inset-0 z-50 flex flex-col items-center justify-center gap-8 overflow-hidden"
       style={{
-        background: 'linear-gradient(to bottom, #2a2440 0%, #453a63 45%, #6e5a35 70%, #1a1626 100%)',
+        background: 'linear-gradient(to bottom, #1b1c1e 0%, #3d2d1e 55%, #8a6a35 78%, #14151a 100%)',
       }}
     >
       {videoOk && (

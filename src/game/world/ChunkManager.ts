@@ -7,14 +7,20 @@ export const CHUNK_SIZE = 32; // tiles per chunk side
 interface Chunk {
   map: Phaser.Tilemaps.Tilemap;
   layer: Phaser.Tilemaps.TilemapLayer;
+  wallMap: Phaser.Tilemaps.Tilemap;
+  wallLayer: Phaser.Tilemaps.TilemapLayer;
   colliders: Phaser.Physics.Arcade.Collider[];
   lights: Phaser.GameObjects.Light[];
 }
 
 /**
- * Streams the world matrix into Phaser as discrete 32x32 tilemap chunks.
+ * Streams the world matrix into Phaser as discrete 32x32 tilemap chunks:
+ * a background wall layer (non-colliding, darkened) under a terrain layer.
  * Only chunks intersecting the camera view (plus a one-chunk buffer) are
  * alive; everything else is destroyed to keep memory and draw calls flat.
+ *
+ * The tileset strip is extruded (1px margin, 2px spacing) to prevent WebGL
+ * texture bleeding at tile seams — see docs/ASSET-GUIDE.md.
  */
 export class ChunkManager {
   private chunks = new Map<string, Chunk>();
@@ -55,7 +61,7 @@ export class ChunkManager {
     }
   }
 
-  private createChunk(cx: number, cy: number): void {
+  private sliceRows(source: Int16Array, cx: number, cy: number): number[][] {
     const { world } = this;
     const rows: number[][] = [];
     for (let y = 0; y < CHUNK_SIZE; y++) {
@@ -64,65 +70,82 @@ export class ChunkManager {
       for (let x = 0; x < CHUNK_SIZE; x++) {
         const wx = cx * CHUNK_SIZE + x;
         row[x] =
-          wx < world.width && wy < world.height ? world.data[wy * world.width + wx] : Tile.AIR;
+          wx < world.width && wy < world.height ? source[wy * world.width + wx] : Tile.AIR;
       }
       rows.push(row);
     }
+    return rows;
+  }
 
+  private makeLayer(
+    rows: number[][],
+    cx: number,
+    cy: number,
+    depth: number
+  ): { map: Phaser.Tilemaps.Tilemap; layer: Phaser.Tilemaps.TilemapLayer } {
     const map = this.scene.make.tilemap({
       data: rows,
       tileWidth: TILE_SIZE,
       tileHeight: TILE_SIZE,
       insertNull: true,
     });
-    const tileset = map.addTilesetImage('tiles', 'tiles', TILE_SIZE, TILE_SIZE, 0, 0)!;
-    const layer = map.createLayer(0, tileset, cx * CHUNK_SIZE * TILE_SIZE, cy * CHUNK_SIZE * TILE_SIZE)!;
-    layer.setCollision(SOLID_TILES);
-    layer.setDepth(10);
+    // margin 1 / spacing 2 matches the extruded strip built in BootScene
+    const tileset = map.addTilesetImage('tiles', 'tiles', TILE_SIZE, TILE_SIZE, 1, 2)!;
+    const layer = map.createLayer(
+      0,
+      tileset,
+      cx * CHUNK_SIZE * TILE_SIZE,
+      cy * CHUNK_SIZE * TILE_SIZE
+    )!;
+    layer.setDepth(depth);
     if (this.useLights) layer.setPipeline('Light2D');
+    return { map, layer };
+  }
+
+  private createChunk(cx: number, cy: number): void {
+    const rows = this.sliceRows(this.world.data, cx, cy);
+    const wallRows = this.sliceRows(this.world.walls, cx, cy);
+
+    const wall = this.makeLayer(wallRows, cx, cy, 9);
+    const terrain = this.makeLayer(rows, cx, cy, 10);
+    terrain.layer.setCollision(SOLID_TILES);
 
     const colliders = this.collideTargets.map((target) =>
-      this.scene.physics.add.collider(target, layer)
+      this.scene.physics.add.collider(target, terrain.layer)
     );
 
-    // spawn point lights for every torch tile in this chunk
+    // spawn point lights for glowing tiles in this chunk
     const lights: Phaser.GameObjects.Light[] = [];
     if (this.useLights) {
       for (let y = 0; y < CHUNK_SIZE; y++) {
         for (let x = 0; x < CHUNK_SIZE; x++) {
+          const wx = (cx * CHUNK_SIZE + x) * TILE_SIZE + TILE_SIZE / 2;
+          const wy = (cy * CHUNK_SIZE + y) * TILE_SIZE + TILE_SIZE / 2;
           if (rows[y][x] === Tile.TORCH) {
-            lights.push(
-              this.scene.lights.addLight(
-                (cx * CHUNK_SIZE + x) * TILE_SIZE + 8,
-                (cy * CHUNK_SIZE + y) * TILE_SIZE + 6,
-                140,
-                0xffb02e,
-                1.6
-              )
-            );
+            lights.push(this.scene.lights.addLight(wx, wy - 3, 110, 0xffb02e, 0.9));
           }
           if (rows[y][x] === Tile.CRYSTAL_BLUE) {
-            lights.push(
-              this.scene.lights.addLight(
-                (cx * CHUNK_SIZE + x) * TILE_SIZE + 8,
-                (cy * CHUNK_SIZE + y) * TILE_SIZE + 8,
-                90,
-                0x54c8f0,
-                1.0
-              )
-            );
+            lights.push(this.scene.lights.addLight(wx, wy, 95, 0x54c8f0, 1.0));
           }
         }
       }
     }
 
-    this.chunks.set(`${cx},${cy}`, { map, layer, colliders, lights });
+    this.chunks.set(`${cx},${cy}`, {
+      map: terrain.map,
+      layer: terrain.layer,
+      wallMap: wall.map,
+      wallLayer: wall.layer,
+      colliders,
+      lights,
+    });
   }
 
   private destroyChunk(key: string, chunk: Chunk): void {
     chunk.colliders.forEach((c) => c.destroy());
     chunk.lights.forEach((l) => this.scene.lights.removeLight(l));
     chunk.map.destroy(); // destroys the layer too
+    chunk.wallMap.destroy();
     this.chunks.delete(key);
   }
 
@@ -135,6 +158,7 @@ export class ChunkManager {
   /**
    * Blocks are data, not entities: mutate the world matrix and let the
    * owning chunk layer redraw the cell. Never spawn physics sprites here.
+   * Background walls are untouched — mined tunnels keep their backdrop.
    */
   setTile(tx: number, ty: number, tile: number): void {
     const { world } = this;

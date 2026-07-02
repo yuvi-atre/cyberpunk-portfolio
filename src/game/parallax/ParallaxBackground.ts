@@ -18,6 +18,7 @@ interface WrapLayer {
  */
 export class ParallaxBackground {
   private sky: Phaser.GameObjects.Image;
+  private sun: Phaser.GameObjects.Image;
   private layers: WrapLayer[] = [];
   private scene: Phaser.Scene;
 
@@ -30,9 +31,16 @@ export class ParallaxBackground {
       .setScrollFactor(0)
       .setDepth(0);
 
-    this.addLayer('clouds', 0.05, 40, 0.02, 1, 4);
-    this.addLayer('mountains', 0.15, 120, 0.05, 2, 0);
-    this.addLayer('hills', 0.35, 230, 0.08, 3, 0);
+    this.sun = scene.add
+      .image(0, 0, 'sun')
+      .setOrigin(0.5, 0.5)
+      .setScrollFactor(0)
+      .setDepth(1);
+
+    this.addLayer('clouds', 0.05, 40, 0.02, 2, 4);
+    this.addLayer('farridge', 0.08, 90, 0.03, 2, 0);
+    this.addLayer('mountains', 0.15, 120, 0.05, 3, 0);
+    this.addLayer('hills', 0.35, 230, 0.08, 4, 0);
   }
 
   private addLayer(
@@ -67,6 +75,7 @@ export class ParallaxBackground {
     // revealing the dark cave-void background color behind it
     const fade = Phaser.Math.Clamp(1 - surfaceDepthPx / 480, 0, 1);
     this.sky.setAlpha(fade);
+    this.sun.setPosition(camera.width - 140, 90).setAlpha(fade);
 
     for (const layer of this.layers) {
       layer.drift += layer.driftSpeed * (delta / 1000);

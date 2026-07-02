@@ -25,6 +25,8 @@ export interface Structure {
   height: number;
   cells: number[][];
   markers: StructureMarker[];
+  /** Background wall placed behind every non-NOOP cell of the blueprint. */
+  wallTile?: number;
 }
 
 class Blueprint {
@@ -66,8 +68,14 @@ class Blueprint {
     return this;
   }
 
-  build(): Structure {
-    return { width: this.width, height: this.height, cells: this.cells, markers: this.markers };
+  build(wallTile?: number): Structure {
+    return {
+      width: this.width,
+      height: this.height,
+      cells: this.cells,
+      markers: this.markers,
+      wallTile,
+    };
   }
 }
 
@@ -79,14 +87,14 @@ export function buildHouse(): Structure {
   b.fillRect(1, 4, 13, 1, Tile.WOOD);
   // windows punched into the outer walls
   b.set(0, 2, Tile.GLASS).set(14, 2, Tile.GLASS).set(0, 6, Tile.GLASS);
-  // interior torches
-  b.set(4, 2, Tile.TORCH).set(10, 2, Tile.TORCH).set(4, 6, Tile.TORCH).set(10, 6, Tile.TORCH);
+  // interior torches (sparse — heavy torch light flattens the wall shading)
+  b.set(4, 2, Tile.TORCH).set(10, 6, Tile.TORCH);
   // doors on both walls so the ground floor is a walk-through
   b.set(14, 7, Tile.DOOR_TOP).set(14, 8, Tile.DOOR);
   b.set(0, 7, Tile.DOOR_TOP).set(0, 8, Tile.DOOR);
   b.marker('project', 'house', 14, 8);
   b.marker('npc', 'mentor-house', 19, 8);
-  return b.build();
+  return b.build(Tile.WALL_WOOD);
 }
 
 /** Wrought-iron graveyard — "Deprecated Technologies". */
@@ -129,7 +137,7 @@ export function buildCastle(): Structure {
   b.marker('project', 'castle', 20, 19);
   b.marker('npc', 'manager-castle', -5, 21);
   b.marker('sign', 'sign-castle', -3, 20);
-  return b.build();
+  return b.build(Tile.WALL_STONE_BRICK);
 }
 
 /** Stepped sandstone pyramid — legacy systems monument. */
@@ -162,7 +170,7 @@ export function buildBasement(): Structure {
   b.set(14, 7, Tile.CHEST);
   b.set(4, 7, Tile.SIGN);
   b.marker('sign', 'sign-mines', 4, 7);
-  return b.build();
+  return b.build(Tile.WALL_RED_BRICK);
 }
 
 /** Decorated stone-brick dungeon under the castle — deep expertise. */
@@ -176,7 +184,7 @@ export function buildDungeon(): Structure {
   b.set(13, 7, Tile.TORCH).set(15, 7, Tile.TORCH);
   b.set(3, 4, Tile.TORCH).set(25, 4, Tile.TORCH);
   b.set(25, 10, Tile.CHEST);
-  return b.build();
+  return b.build(Tile.WALL_STONE_BRICK);
 }
 
 /** Remote sand island with the treasure chest — future goals. */

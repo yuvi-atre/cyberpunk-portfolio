@@ -39,9 +39,35 @@ export enum Tile {
   DARK_STONE = 30,
   STONE_SLAB = 31,
   DOOR_TOP = 32,
+  // background walls — rendered on a separate non-colliding layer
+  WALL_DIRT = 33,
+  WALL_STONE = 34,
+  WALL_WOOD = 35,
+  WALL_RED_BRICK = 36,
+  WALL_STONE_BRICK = 37,
+  WALL_SANDSTONE = 38,
 }
 
-export const TILE_COUNT = 33;
+export const TILE_COUNT = 39;
+
+export const WALL_TILES: number[] = [
+  Tile.WALL_DIRT,
+  Tile.WALL_STONE,
+  Tile.WALL_WOOD,
+  Tile.WALL_RED_BRICK,
+  Tile.WALL_STONE_BRICK,
+  Tile.WALL_SANDSTONE,
+];
+
+/** Which foreground tile each wall texture is derived from (darkened at boot). */
+export const WALL_SOURCE: Record<number, Tile> = {
+  [Tile.WALL_DIRT]: Tile.DIRT,
+  [Tile.WALL_STONE]: Tile.STONE,
+  [Tile.WALL_WOOD]: Tile.WOOD,
+  [Tile.WALL_RED_BRICK]: Tile.RED_BRICK,
+  [Tile.WALL_STONE_BRICK]: Tile.STONE_BRICK,
+  [Tile.WALL_SANDSTONE]: Tile.SANDSTONE,
+};
 
 /** Tiles the player collides with. */
 export const SOLID_TILES: number[] = [

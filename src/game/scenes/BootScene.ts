@@ -29,7 +29,7 @@ interface SourceRef {
 
 const KENNEY_MAP: Partial<Record<Tile, SourceRef>> = {
   [Tile.GRASS]: { sheet: MAIN, index: 21 },
-  [Tile.DIRT]: { sheet: MAIN, index: 4 },
+  [Tile.DIRT]: { sheet: MAIN, index: 24 },
   [Tile.SAND]: { sheet: MAIN, index: 141 },
   [Tile.WOOD]: { sheet: MAIN, index: 6 },
   [Tile.LOG]: { sheet: MAIN, index: 116 },
@@ -72,6 +72,8 @@ export class BootScene extends Phaser.Scene {
     this.makeCharacter('npc-2', { shirt: '#d4a017', pants: '#4a3520', hair: '#e8e8e8', skin: '#eab387' });
     this.makeParticle();
     this.makeSky();
+    this.makeSun();
+    this.makeFarRidge();
     this.makeMountains();
     this.makeHills();
     this.makeClouds();
@@ -94,16 +96,26 @@ export class BootScene extends Phaser.Scene {
   // ---------------------------------------------------------------- tileset
   private makeTileset(): void {
     const T = TILE_SIZE;
-    const ctx = this.ctxFor('tiles', TILE_COUNT * T, T);
+    const STRIDE = T + 2; // 1px extruded margin per side prevents WebGL seam bleeding
+    const ctx = this.ctxFor('tiles', TILE_COUNT * STRIDE, STRIDE);
     ctx.imageSmoothingEnabled = false;
+    const cellX = (i: number) => i * STRIDE + 1;
 
     const blit = (ref: SourceRef, destTile: number) => {
       const img = this.sourceImage(ref.sheet.key);
       const sx = (ref.index % ref.sheet.cols) * T;
       const sy = Math.floor(ref.index / ref.sheet.cols) * T;
       ctx.globalAlpha = ref.alpha ?? 1;
-      ctx.drawImage(img, sx, sy, T, T, destTile * T, 0, T, T);
+      ctx.drawImage(img, sx, sy, T, T, cellX(destTile), 1, T, T);
       ctx.globalAlpha = 1;
+    };
+
+    /** Run a local-coordinate draw function inside a tile cell. */
+    const inCell = (tile: number, draw: (c: CanvasRenderingContext2D) => void) => {
+      ctx.save();
+      ctx.translate(cellX(tile), 1);
+      draw(ctx);
+      ctx.restore();
     };
 
     // straight Kenney tiles
@@ -113,10 +125,29 @@ export class BootScene extends Phaser.Scene {
 
     // subtle tone shifts: browner dirt and darker stone so the underground
     // reads distinctly from the sunlit desert sand
-    ctx.fillStyle = 'rgba(92, 56, 28, 0.22)';
-    ctx.fillRect(Tile.DIRT * T, 0, T, T);
-    ctx.fillStyle = 'rgba(38, 42, 60, 0.16)';
-    ctx.fillRect(Tile.STONE * T, 0, T, T);
+    inCell(Tile.DIRT, (c) => {
+      c.fillStyle = 'rgba(92, 56, 28, 0.22)';
+      c.fillRect(0, 0, T, T);
+    });
+    inCell(Tile.STONE, (c) => {
+      c.fillStyle = 'rgba(38, 42, 60, 0.28)';
+      c.fillRect(0, 0, T, T);
+    });
+
+    // leaf canopies: break up the flat fill with darker clusters and holes
+    inCell(Tile.LEAVES, (c) => {
+      for (let y = 0; y < T; y += 2) {
+        for (let x = 0; x < T; x += 2) {
+          const r = hash2D(x, y, 91);
+          if (r < 0.22) {
+            c.fillStyle = 'rgba(47, 112, 31, 0.9)';
+            c.fillRect(x, y, 2, 2);
+          } else if (r > 0.93) {
+            c.clearRect(x, y, 2, 2);
+          }
+        }
+      }
+    });
 
     // ores: Kenney stone base + colored nuggets from the skill palette
     const ores: Array<[Tile, string]> = [
@@ -127,120 +158,149 @@ export class BootScene extends Phaser.Scene {
     ];
     for (const [tile, color] of ores) {
       blit({ sheet: ROCK, index: 64 }, tile);
-      this.drawNuggets(ctx, tile * T, color);
+      inCell(tile, (c) => this.drawNuggets(c, color));
     }
 
     // crystal: darkened stone base + the Kenney gem
     blit({ sheet: ROCK, index: 64 }, Tile.CRYSTAL_BLUE);
-    ctx.fillStyle = 'rgba(10, 12, 30, 0.45)';
-    ctx.fillRect(Tile.CRYSTAL_BLUE * T, 0, T, T);
+    inCell(Tile.CRYSTAL_BLUE, (c) => {
+      c.fillStyle = 'rgba(10, 12, 30, 0.45)';
+      c.fillRect(0, 0, T, T);
+    });
     blit(GEM, Tile.CRYSTAL_BLUE);
 
     // mossy stone: stone base + moss cap and speckles
     blit({ sheet: ROCK, index: 64 }, Tile.MOSSY_STONE);
-    this.drawMoss(ctx, Tile.MOSSY_STONE * T);
+    inCell(Tile.MOSSY_STONE, (c) => this.drawMoss(c));
 
     // fully procedural specials
-    this.drawGlass(ctx, Tile.GLASS * T);
-    this.drawTorch(ctx, Tile.TORCH * T);
-    this.drawVine(ctx, Tile.VINE * T);
-    this.drawGravestone(ctx, Tile.GRAVESTONE * T);
-    this.drawChest(ctx, Tile.CHEST * T);
-    this.drawBanner(ctx, Tile.BANNER_RED * T, Tile.BANNER_RED);
-    this.drawBanner(ctx, Tile.BANNER_BLUE * T, Tile.BANNER_BLUE);
-    this.drawBanner(ctx, Tile.BANNER_YELLOW * T, Tile.BANNER_YELLOW);
+    inCell(Tile.GLASS, (c) => this.drawGlass(c));
+    inCell(Tile.TORCH, (c) => this.drawTorch(c));
+    inCell(Tile.VINE, (c) => this.drawVine(c));
+    inCell(Tile.GRAVESTONE, (c) => this.drawGravestone(c));
+    inCell(Tile.CHEST, (c) => this.drawChest(c));
+    inCell(Tile.BANNER_RED, (c) => this.drawBanner(c, Tile.BANNER_RED));
+    inCell(Tile.BANNER_BLUE, (c) => this.drawBanner(c, Tile.BANNER_BLUE));
+    inCell(Tile.BANNER_YELLOW, (c) => this.drawBanner(c, Tile.BANNER_YELLOW));
+
+    // background walls: smooth panel textures (visually distinct from the
+    // facade tiles) heavily darkened so interiors read as depth, not solids
+    const wallRefs: Array<[Tile, SourceRef]> = [
+      [Tile.WALL_DIRT, { sheet: TERRACOTTA, index: 37 }],
+      [Tile.WALL_STONE, { sheet: ROCK, index: 37 }],
+      [Tile.WALL_WOOD, { sheet: SANDPACK, index: 37 }],
+      [Tile.WALL_RED_BRICK, { sheet: TERRACOTTA, index: 16 }],
+      [Tile.WALL_STONE_BRICK, { sheet: ROCK, index: 16 }],
+      [Tile.WALL_SANDSTONE, { sheet: SANDPACK, index: 16 }],
+    ];
+    for (const [wall, ref] of wallRefs) {
+      blit(ref, wall);
+      inCell(wall, (c) => {
+        c.fillStyle = 'rgba(12, 10, 22, 0.62)';
+        c.fillRect(0, 0, T, T);
+      });
+    }
+
+    // edge extrusion: copy each tile's border pixels into its 1px margin
+    for (let i = 0; i < TILE_COUNT; i++) {
+      const x = cellX(i);
+      ctx.drawImage(ctx.canvas, x, 1, T, 1, x, 0, T, 1); // top
+      ctx.drawImage(ctx.canvas, x, T, T, 1, x, T + 1, T, 1); // bottom
+      ctx.drawImage(ctx.canvas, x, 1, 1, T, x - 1, 1, 1, T); // left
+      ctx.drawImage(ctx.canvas, x + T - 1, 1, 1, T, x + T, 1, 1, T); // right
+    }
 
     this.refresh('tiles');
   }
 
-  private drawNuggets(ctx: CanvasRenderingContext2D, ox: number, color: string): void {
+  private drawNuggets(ctx: CanvasRenderingContext2D, color: string): void {
     const spots = [
       [4, 4], [11, 3], [13, 9], [6, 10], [3, 13], [10, 13],
     ];
     for (const [sx, sy] of spots) {
       ctx.fillStyle = color;
-      ctx.fillRect(ox + sx, sy, 3, 3);
+      ctx.fillRect(sx, sy, 3, 3);
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      ctx.fillRect(ox + sx, sy, 1, 1);
+      ctx.fillRect(sx, sy, 1, 1);
     }
   }
 
-  private drawMoss(ctx: CanvasRenderingContext2D, ox: number): void {
+  private drawMoss(ctx: CanvasRenderingContext2D): void {
     ctx.fillStyle = '#4ec455';
-    ctx.fillRect(ox, 0, 18, 4);
+    ctx.fillRect(0, 0, 18, 4);
     for (let x = 0; x < 18; x += 2) {
-      if (hash2D(ox + x, 4, 17) < 0.55) ctx.fillRect(ox + x, 4, 2, 2);
-      if (hash2D(ox + x, 6, 17) < 0.2) ctx.fillRect(ox + x, 6, 2, 2);
+      if (hash2D(x, 4, 17) < 0.55) ctx.fillRect(x, 4, 2, 2);
+      if (hash2D(x, 6, 17) < 0.2) ctx.fillRect(x, 6, 2, 2);
     }
     ctx.fillStyle = '#7cc95a';
-    for (let x = 1; x < 18; x += 4) ctx.fillRect(ox + x, 1, 1, 1);
+    for (let x = 1; x < 18; x += 4) ctx.fillRect(x, 1, 1, 1);
   }
 
-  private drawGlass(ctx: CanvasRenderingContext2D, ox: number): void {
+  private drawGlass(ctx: CanvasRenderingContext2D): void {
     ctx.fillStyle = 'rgba(184, 220, 240, 0.45)';
-    ctx.fillRect(ox, 0, 18, 18);
+    ctx.fillRect(0, 0, 18, 18);
     ctx.strokeStyle = 'rgba(143, 188, 216, 0.9)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(ox + 0.5, 0.5, 17, 17);
+    ctx.strokeRect(0.5, 0.5, 17, 17);
     ctx.fillStyle = 'rgba(255,255,255,0.55)';
-    ctx.fillRect(ox + 4, 2, 2, 7);
-    ctx.fillRect(ox + 7, 6, 1, 5);
+    ctx.fillRect(4, 2, 2, 7);
+    ctx.fillRect(7, 6, 1, 5);
   }
 
-  private drawTorch(ctx: CanvasRenderingContext2D, ox: number): void {
+  private drawTorch(ctx: CanvasRenderingContext2D): void {
     ctx.fillStyle = '#8a5c33';
-    ctx.fillRect(ox + 8, 7, 2, 10);
+    ctx.fillRect(8, 7, 2, 10);
     ctx.fillStyle = '#ffb02e';
-    ctx.fillRect(ox + 7, 2, 4, 6);
+    ctx.fillRect(7, 2, 4, 6);
     ctx.fillStyle = '#ffd76a';
-    ctx.fillRect(ox + 8, 3, 2, 4);
+    ctx.fillRect(8, 3, 2, 4);
     ctx.fillStyle = 'rgba(255, 176, 46, 0.30)';
-    ctx.fillRect(ox + 5, 0, 8, 9);
+    ctx.fillRect(5, 0, 8, 9);
   }
 
-  private drawVine(ctx: CanvasRenderingContext2D, ox: number): void {
+  private drawVine(ctx: CanvasRenderingContext2D): void {
     ctx.fillStyle = '#3f8f2e';
-    ctx.fillRect(ox + 8, 0, 2, 18);
+    ctx.fillRect(8, 0, 2, 18);
     ctx.fillStyle = '#4ec455';
-    ctx.fillRect(ox + 6, 3, 2, 2);
-    ctx.fillRect(ox + 10, 8, 2, 2);
-    ctx.fillRect(ox + 6, 13, 2, 2);
+    ctx.fillRect(6, 3, 2, 2);
+    ctx.fillRect(10, 8, 2, 2);
+    ctx.fillRect(6, 13, 2, 2);
   }
 
-  private drawGravestone(ctx: CanvasRenderingContext2D, ox: number): void {
+  private drawGravestone(ctx: CanvasRenderingContext2D): void {
     ctx.fillStyle = '#8f8f9a';
-    ctx.fillRect(ox + 5, 5, 8, 13);
-    ctx.fillRect(ox + 6, 3, 6, 2);
+    ctx.fillRect(5, 5, 8, 13);
+    ctx.fillRect(6, 3, 6, 2);
     ctx.fillStyle = '#a5a5b0';
-    ctx.fillRect(ox + 5, 5, 1, 13);
+    ctx.fillRect(5, 5, 1, 13);
     ctx.fillStyle = '#6a6a75';
-    ctx.fillRect(ox + 7, 7, 4, 1);
-    ctx.fillRect(ox + 7, 9, 4, 1);
+    ctx.fillRect(7, 7, 4, 1);
+    ctx.fillRect(7, 9, 4, 1);
   }
 
-  private drawChest(ctx: CanvasRenderingContext2D, ox: number): void {
+  private drawChest(ctx: CanvasRenderingContext2D): void {
     ctx.fillStyle = '#8a5c33';
-    ctx.fillRect(ox + 2, 5, 14, 13);
+    ctx.fillRect(2, 5, 14, 13);
     ctx.fillStyle = '#6f4826';
-    ctx.fillRect(ox + 2, 5, 14, 2);
+    ctx.fillRect(2, 5, 14, 2);
     ctx.fillStyle = '#c8a84b';
-    ctx.fillRect(ox + 2, 10, 14, 2);
-    ctx.fillRect(ox + 8, 9, 2, 4);
+    ctx.fillRect(2, 10, 14, 2);
+    ctx.fillRect(8, 9, 2, 4);
     ctx.fillStyle = '#ffd76a';
-    ctx.fillRect(ox + 8, 10, 2, 2);
+    ctx.fillRect(8, 10, 2, 2);
   }
 
-  private drawBanner(ctx: CanvasRenderingContext2D, ox: number, tile: Tile): void {
+  private drawBanner(ctx: CanvasRenderingContext2D, tile: Tile): void {
     const c = TILE_COLORS[tile];
     ctx.fillStyle = '#565660';
-    ctx.fillRect(ox, 0, 18, 2);
+    ctx.fillRect(0, 0, 18, 2);
     ctx.fillStyle = c.base;
-    ctx.fillRect(ox + 4, 2, 10, 13);
+    ctx.fillRect(4, 2, 10, 13);
     ctx.fillStyle = c.accent;
-    ctx.fillRect(ox + 6, 4, 6, 2);
+    ctx.fillRect(6, 4, 6, 2);
     ctx.fillStyle = c.dark;
-    ctx.fillRect(ox + 4, 13, 10, 2);
-    ctx.fillRect(ox + 6, 15, 6, 2);
+    ctx.fillRect(4, 13, 10, 2);
+    ctx.fillRect(6, 15, 6, 2);
   }
 
   // ------------------------------------------------------------- characters
@@ -253,33 +313,35 @@ export class BootScene extends Phaser.Scene {
     const H = 24;
     const ctx = this.ctxFor(key, W * FRAMES, H);
     for (let f = 0; f < FRAMES; f++) {
-      const ox = f * W;
+      ctx.save();
+      ctx.translate(f * W, 0);
       // hair + head
       ctx.fillStyle = p.hair;
-      ctx.fillRect(ox + 4, 0, 8, 3);
-      ctx.fillRect(ox + 3, 1, 2, 4);
+      ctx.fillRect(4, 0, 8, 3);
+      ctx.fillRect(3, 1, 2, 4);
       ctx.fillStyle = p.skin;
-      ctx.fillRect(ox + 5, 3, 7, 5);
+      ctx.fillRect(5, 3, 7, 5);
       ctx.fillStyle = '#222';
-      ctx.fillRect(ox + 10, 4, 1, 2); // eye (faces right)
+      ctx.fillRect(10, 4, 1, 2); // eye (faces right)
       // torso + arms
       ctx.fillStyle = p.shirt;
-      ctx.fillRect(ox + 4, 8, 8, 7);
+      ctx.fillRect(4, 8, 8, 7);
       const armSwing = f === 1 ? 1 : f === 3 ? -1 : 0;
-      ctx.fillRect(ox + 3 - armSwing, 9, 2, 5);
-      ctx.fillRect(ox + 11 + armSwing, 9, 2, 5);
+      ctx.fillRect(3 - armSwing, 9, 2, 5);
+      ctx.fillRect(11 + armSwing, 9, 2, 5);
       ctx.fillStyle = p.skin;
-      ctx.fillRect(ox + 3 - armSwing, 13, 2, 2);
-      ctx.fillRect(ox + 11 + armSwing, 13, 2, 2);
+      ctx.fillRect(3 - armSwing, 13, 2, 2);
+      ctx.fillRect(11 + armSwing, 13, 2, 2);
       // legs: 4 frames = idle, step L, pass, step R
       ctx.fillStyle = p.pants;
       const legOff = f === 1 ? 2 : f === 3 ? -2 : 0;
-      ctx.fillRect(ox + 5 + Math.min(0, legOff), 15, 3, 8);
-      ctx.fillRect(ox + 9 + Math.max(0, legOff), 15, 3, 8);
+      ctx.fillRect(5 + Math.min(0, legOff), 15, 3, 8);
+      ctx.fillRect(9 + Math.max(0, legOff), 15, 3, 8);
       // boots
       ctx.fillStyle = '#3c2a18';
-      ctx.fillRect(ox + 5 + Math.min(0, legOff), 22, 3, 2);
-      ctx.fillRect(ox + 9 + Math.max(0, legOff), 22, 3, 2);
+      ctx.fillRect(5 + Math.min(0, legOff), 22, 3, 2);
+      ctx.fillRect(9 + Math.max(0, legOff), 22, 3, 2);
+      ctx.restore();
     }
     this.refresh(key);
     // register frames on the canvas texture
@@ -306,6 +368,45 @@ export class BootScene extends Phaser.Scene {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 32, 512);
     this.refresh('sky');
+  }
+
+  /** Chunky pixel sun with a soft halo. */
+  private makeSun(): void {
+    const S = 64;
+    const ctx = this.ctxFor('sun', S, S);
+    const cx = S / 2;
+    // stepped pixel circle
+    const draw = (r: number, color: string) => {
+      ctx.fillStyle = color;
+      for (let y = -r; y <= r; y += 2) {
+        const half = Math.floor(Math.sqrt(r * r - y * y) / 2) * 2;
+        ctx.fillRect(cx - half, cx + y, half * 2, 2);
+      }
+    };
+    draw(28, 'rgba(255, 236, 170, 0.28)');
+    draw(20, '#ffe9a8');
+    draw(15, '#ffd76a');
+    this.refresh('sun');
+  }
+
+  /** Palest, most distant ridge line — adds a third depth plane. */
+  private makeFarRidge(): void {
+    const W = 512;
+    const H = 220;
+    const ctx = this.ctxFor('farridge', W, H);
+    ctx.fillStyle = '#8fadd0';
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    for (let x = 0; x <= W; x += 8) {
+      const t = x / W;
+      const y =
+        120 - 55 * (0.7 * Math.sin(t * Math.PI * 2 + 2.4) + 0.3 * Math.sin(t * Math.PI * 6 + 0.6));
+      ctx.lineTo(x, y);
+    }
+    ctx.lineTo(W, H);
+    ctx.closePath();
+    ctx.fill();
+    this.refresh('farridge');
   }
 
   private makeMountains(): void {
@@ -367,8 +468,11 @@ export class BootScene extends Phaser.Scene {
       ctx.fillRect(x + s, y, s * 2, s);
     };
     blob(40, 30, 8);
-    blob(220, 60, 6);
+    blob(150, 78, 5);
+    blob(220, 55, 6);
+    blob(310, 90, 4);
     blob(380, 24, 10);
+    blob(470, 62, 5);
     this.refresh('clouds');
   }
 }
