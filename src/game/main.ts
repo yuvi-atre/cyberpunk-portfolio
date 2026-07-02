@@ -10,13 +10,13 @@ import { GameScene } from './scenes/GameScene';
 export const gameConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   parent: 'phaser-container',
-  backgroundColor: '#0b0a14',
+  backgroundColor: '#0a0912',
   pixelArt: true,
   roundPixels: true,
   physics: {
     default: 'arcade',
     arcade: {
-      gravity: { x: 0, y: 900 },
+      gravity: { x: 0, y: 1000 },
       debug: false,
     },
   },

@@ -121,11 +121,17 @@ export class ChunkManager {
         for (let x = 0; x < CHUNK_SIZE; x++) {
           const wx = (cx * CHUNK_SIZE + x) * TILE_SIZE + TILE_SIZE / 2;
           const wy = (cy * CHUNK_SIZE + y) * TILE_SIZE + TILE_SIZE / 2;
-          if (rows[y][x] === Tile.TORCH) {
-            lights.push(this.scene.lights.addLight(wx, wy - 3, 110, 0xffb02e, 0.9));
+          if (rows[y][x] === Tile.NEON_LAMP) {
+            lights.push(this.scene.lights.addLight(wx, wy - 4, 170, 0xff2d95, 0.9));
           }
-          if (rows[y][x] === Tile.CRYSTAL_BLUE) {
-            lights.push(this.scene.lights.addLight(wx, wy, 95, 0x54c8f0, 1.0));
+          if (rows[y][x] === Tile.LAMP_WHITE) {
+            lights.push(this.scene.lights.addLight(wx, wy - 4, 180, 0xbfe8ff, 0.85));
+          }
+          if (rows[y][x] === Tile.POWER_CELL) {
+            lights.push(this.scene.lights.addLight(wx, wy, 150, 0x7df9ff, 1.0));
+          }
+          if (rows[y][x] === Tile.HOLO_SIGN) {
+            lights.push(this.scene.lights.addLight(wx, wy, 120, 0x00f0ff, 0.7));
           }
         }
       }
@@ -151,7 +157,7 @@ export class ChunkManager {
 
   getTile(tx: number, ty: number): number {
     const { world } = this;
-    if (tx < 0 || tx >= world.width || ty < 0 || ty >= world.height) return Tile.BEDROCK;
+    if (tx < 0 || tx >= world.width || ty < 0 || ty >= world.height) return Tile.SUBSTRATE;
     return world.data[ty * world.width + tx];
   }
 

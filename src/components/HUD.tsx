@@ -54,7 +54,7 @@ export function HUD({
       {depth > 2 && (
         <div className="pixel-panel absolute bottom-3 left-3 px-3 py-2">
           <span className="font-display text-[10px]" style={{ color: 'var(--info)' }}>
-            ⛏ DEPTH {depth}m
+            ⛏ UNDERCITY {depth}m
           </span>
         </div>
       )}
@@ -63,7 +63,7 @@ export function HUD({
       {hint && (
         <div
           className="pixel-panel absolute bottom-6 left-1/2 -translate-x-1/2 px-4 py-2"
-          style={{ borderColor: 'var(--border-accent)' }}
+          style={{ borderColor: 'var(--text-accent)' }}
         >
           <span className="font-display text-[10px] md:text-xs" style={{ color: 'var(--text-accent)' }}>
             {isTouch ? 'TAP ✦ — ' : '[E] — '}

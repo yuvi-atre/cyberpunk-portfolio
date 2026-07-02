@@ -1,9 +1,9 @@
 {
-  "name": "terraria-portfolio",
+  "name": "cyberpunk-portfolio",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
-  "description": "A Terraria-style interactive portfolio built with Phaser 3, React 18, TypeScript, Vite, Tailwind CSS and GSAP.",
+  "description": "A cyberpunk-style interactive portfolio built with Phaser 3, React 18, TypeScript, Vite, Tailwind CSS and GSAP.",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

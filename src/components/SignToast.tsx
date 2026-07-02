@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import type { Sign } from '../services/PortfolioService';
 
-/** Non-blocking parchment tooltip for wooden signs; auto-dismisses. */
+/** Non-blocking holo tag for holographic signboards; auto-dismisses. */
 export function SignToast({ sign, onDone }: { sign: Sign; onDone: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -19,7 +19,7 @@ export function SignToast({ sign, onDone }: { sign: Sign; onDone: () => void }) 
 
   return (
     <div className="pointer-events-none absolute inset-x-0 bottom-20 z-20 flex justify-center px-4">
-      <div ref={ref} className="wood-panel pointer-events-auto max-w-xl cursor-pointer px-5 py-3" onClick={onDone}>
+      <div ref={ref} className="holo-panel pointer-events-auto max-w-xl cursor-pointer px-5 py-3" onClick={onDone}>
         <p className="font-body text-xl leading-snug">{sign.text}</p>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { Modal } from './Modal';
 import { PortfolioService } from '../services/PortfolioService';
 
-/** The "About Me" panel — spawn-house content in readable form. */
+/** The "About Me" panel — residential-sector content in readable form. */
 export function AboutModal({ onClose }: { onClose: () => void }) {
   const p = PortfolioService.personal;
   return (
@@ -34,8 +34,8 @@ export function AboutModal({ onClose }: { onClose: () => void }) {
       </div>
 
       <p className="font-body mt-5 text-base leading-snug" style={{ color: 'var(--text-secondary)' }}>
-        Built with love as a non-commercial fan tribute to the aesthetic of Terraria (© Re-Logic).
-        All art here is CC0/openly licensed or original — see the repository for full attribution.
+        All pixel art comes from free CraftPix cyberpunk asset packs or is drawn procedurally —
+        see the repository for full attribution.
       </p>
     </Modal>
   );

@@ -9,70 +9,82 @@
     "location": "Columbus, OH"
   },
   "about": [
-    "Welcome to my world — literally. I'm a software engineer studying at The Ohio State University.",
-    "Every hill, cave and castle here is generated from a deterministic Perlin-noise seed, and every ore you mine is a real skill from my resume.",
-    "Head right to explore my career: the castle holds my flagship work, the desert hides legacy systems, and the deep caves hold raw technical skills."
+    "Welcome to my city — literally. I'm a software engineer studying at The Ohio State University.",
+    "Every street, tower and tunnel here is generated from a deterministic Perlin-noise seed, and every data node you break in the undercity is a real skill from my resume.",
+    "Head right to explore my career: Market Street holds my frontend work, the Industrial Zone my backend systems, and the Mega-Corp Tower my flagship project."
   ],
   "skills": [
-    { "id": "typescript", "displayName": "TypeScript", "tier": "advanced", "blockType": "ore_gold", "spawnDepth": [8, 40], "abundance": 14, "description": "Strict typing across full-stack apps, generics, and compiler-driven refactoring." },
-    { "id": "react", "displayName": "React 18", "tier": "advanced", "blockType": "ore_gold", "spawnDepth": [6, 35], "abundance": 14, "description": "Hooks, concurrent features, performance profiling, and design-system components." },
-    { "id": "python", "displayName": "Python", "tier": "advanced", "blockType": "ore_silver", "spawnDepth": [15, 60], "abundance": 16, "description": "Data pipelines, scripting, FastAPI services, and algorithm implementation." },
-    { "id": "phaser", "displayName": "Phaser 3", "tier": "intermediate", "blockType": "ore_silver", "spawnDepth": [10, 50], "abundance": 10, "description": "WebGL 2D rendering, arcade physics, chunked tilemaps — this very world runs on it." },
-    { "id": "aws", "displayName": "AWS Infrastructure", "tier": "advanced", "blockType": "crystal_blue", "spawnDepth": [40, 90], "abundance": 8, "description": "Lambda, S3, CloudFront, IAM — serverless architectures and CDN deployment." },
-    { "id": "node", "displayName": "Node.js", "tier": "advanced", "blockType": "ore_silver", "spawnDepth": [12, 55], "abundance": 12, "description": "Express/Fastify APIs, streaming, worker threads, and build tooling." },
-    { "id": "sql", "displayName": "SQL & Databases", "tier": "intermediate", "blockType": "crystal_blue", "spawnDepth": [45, 100], "abundance": 9, "description": "Postgres schema design, query optimization, and migrations." },
-    { "id": "docker", "displayName": "Docker & CI/CD", "tier": "intermediate", "blockType": "ore_emerald", "spawnDepth": [25, 70], "abundance": 10, "description": "Containerized builds, GitHub Actions pipelines, and automated deployment." },
-    { "id": "java", "displayName": "Java", "tier": "intermediate", "blockType": "ore_copper", "spawnDepth": [10, 45], "abundance": 12, "description": "Object-oriented design, data structures, and coursework foundations." },
-    { "id": "csharp", "displayName": "C#", "tier": "familiar", "blockType": "ore_copper", "spawnDepth": [20, 60], "abundance": 8, "description": "Game scripting and .NET fundamentals." }
+    { "id": "typescript", "displayName": "TypeScript", "tier": "advanced", "blockType": "data_amber", "spawnDepth": [8, 40], "abundance": 14, "description": "Strict typing across full-stack apps, generics, and compiler-driven refactoring." },
+    { "id": "react", "displayName": "React 18", "tier": "advanced", "blockType": "data_amber", "spawnDepth": [6, 35], "abundance": 14, "description": "Hooks, concurrent features, performance profiling, and design-system components." },
+    { "id": "python", "displayName": "Python", "tier": "advanced", "blockType": "data_cyan", "spawnDepth": [15, 60], "abundance": 16, "description": "Data pipelines, scripting, FastAPI services, and algorithm implementation." },
+    { "id": "phaser", "displayName": "Phaser 3", "tier": "intermediate", "blockType": "data_cyan", "spawnDepth": [10, 50], "abundance": 10, "description": "WebGL 2D rendering, arcade physics, chunked tilemaps — this very city runs on it." },
+    { "id": "aws", "displayName": "AWS Infrastructure", "tier": "advanced", "blockType": "power_cell", "spawnDepth": [40, 90], "abundance": 8, "description": "Lambda, S3, CloudFront, IAM — serverless architectures and CDN deployment." },
+    { "id": "node", "displayName": "Node.js", "tier": "advanced", "blockType": "data_cyan", "spawnDepth": [12, 55], "abundance": 12, "description": "Express/Fastify APIs, streaming, worker threads, and build tooling." },
+    { "id": "sql", "displayName": "SQL & Databases", "tier": "intermediate", "blockType": "power_cell", "spawnDepth": [45, 100], "abundance": 9, "description": "Postgres schema design, query optimization, and migrations." },
+    { "id": "docker", "displayName": "Docker & CI/CD", "tier": "intermediate", "blockType": "data_green", "spawnDepth": [25, 70], "abundance": 10, "description": "Containerized builds, GitHub Actions pipelines, and automated deployment." },
+    { "id": "java", "displayName": "Java", "tier": "intermediate", "blockType": "data_magenta", "spawnDepth": [10, 45], "abundance": 12, "description": "Object-oriented design, data structures, and coursework foundations." },
+    { "id": "csharp", "displayName": "C#", "tier": "familiar", "blockType": "data_magenta", "spawnDepth": [20, 60], "abundance": 8, "description": "Game scripting and .NET fundamentals." }
   ],
   "experience": [
     {
-      "id": "manager-castle",
-      "npcName": "The Castellan",
+      "id": "director-tower",
+      "npcName": "The Director",
       "role": "Engineering Manager — Flagship Co.",
-      "zone": "castle",
+      "zone": "tower",
       "dialogue": [
-        "Ah, a visitor! I oversaw this developer's work on our flagship platform.",
+        "State your business. Ah — a recruiter. I directed this engineer's work on our flagship platform.",
         "They shipped features used by thousands of users and never missed a sprint commitment.",
-        "The castle you stand before? A monument to that work. Step through the gate to see it."
+        "The tower behind me is a monument to that work. Step through the lobby gate to review the file."
       ]
     },
     {
-      "id": "mentor-house",
+      "id": "mentor-apartment",
       "npcName": "The Mentor",
       "role": "Senior Engineer — First Internship",
-      "zone": "house",
+      "zone": "apartment",
       "dialogue": [
-        "Welcome, traveler! I mentored this developer during their first internship.",
+        "Hey, welcome to the old block! I mentored this developer during their first internship.",
         "They arrived knowing syntax and left understanding systems — the difference matters.",
-        "Explore the caves below to see the skills they mined along the way."
+        "Break into the undercity below to see the skills they mined along the way."
       ]
     },
     {
-      "id": "professor-pyramid",
+      "id": "trader-market",
+      "npcName": "The Vendor",
+      "role": "Design Lead — Client Projects",
+      "zone": "market",
+      "dialogue": [
+        "Best interfaces on the strip, friend! I worked with this developer on client-facing builds.",
+        "Pixel-perfect components, accessible flows, and animations that never dropped a frame.",
+        "Everything glowing on this street is a UI they could have shipped."
+      ]
+    },
+    {
+      "id": "professor-foundry",
       "npcName": "The Archivist",
       "role": "Professor — The Ohio State University",
-      "zone": "pyramid",
+      "zone": "foundry",
       "dialogue": [
-        "These sands hold the old systems... COBOL-era schemas, monoliths, legacy APIs.",
+        "This foundry still runs the old systems... COBOL-era schemas, monoliths, legacy APIs.",
         "This developer learned to respect what came before while building what comes next.",
-        "The pyramid holds coursework artifacts. Mind the cacti."
+        "The machine hall holds the migration records. Mind the conveyor."
       ]
     }
   ],
   "signs": [
-    { "id": "sign-welcome", "zone": "spawn", "text": "← You are here. Walk right with A/D or arrows. SPACE to jump, CLICK to mine, E to interact." },
-    { "id": "sign-graveyard", "zone": "graveyard", "text": "R.I.P. — jQuery spaghetti (2019), PHP 5 sites (2020), FTP deployments (2021). Gone, learned from." },
-    { "id": "sign-castle", "zone": "castle", "text": "⚔ Flagship Projects — press E at the castle gate to view the portfolio." },
-    { "id": "sign-desert", "zone": "desert", "text": "☀ Legacy Systems Desert — backend architecture & databases buried in the pyramid." },
-    { "id": "sign-ocean", "zone": "ocean", "text": "⛵ The Open Sea — future goals & open source. The voyage continues..." },
-    { "id": "sign-mines", "zone": "underground", "text": "⛏ Skill Mines — break glowing ore blocks to collect skills into your inventory (I)." }
+    { "id": "sign-welcome", "zone": "spawn", "text": "◢ RESIDENTIAL SECTOR 07 — Walk right with A/D or arrows. SPACE to jump, SHIFT to dash, CLICK to break blocks, E to interact." },
+    { "id": "sign-scrapyard", "zone": "scrapyard", "text": "SCRAPYARD — decommissioned: jQuery spaghetti (2019), PHP 5 sites (2020), FTP deployments (2021). Recycled, learned from." },
+    { "id": "sign-market", "zone": "market", "text": "◈ MARKET STREET — frontend & UI/UX district. Talk to the vendors; every neon sign is a shipped interface." },
+    { "id": "sign-industrial", "zone": "industrial", "text": "⚠ INDUSTRIAL ZONE — backend architecture & legacy systems run in the foundry. Authorized personnel only (you're authorized)." },
+    { "id": "sign-tower", "zone": "tower", "text": "▲ MEGA-CORP TOWER — flagship projects archive. Press E at the lobby gate to view the portfolio." },
+    { "id": "sign-undercity", "zone": "undercity", "text": "⛏ THE UNDERCITY — break glowing data nodes to collect skills into your inventory (I)." },
+    { "id": "sign-edge", "zone": "exclusion", "text": "☢ EXCLUSION ZONE — end of the grid. Future goals & open source lie in the ruins ahead..." }
   ],
   "projects": [
     {
       "id": "flagship",
       "name": "Flagship Enterprise Platform",
-      "structure": "castle",
+      "structure": "megacorp",
       "period": "2024 — Present",
       "summary": "A production web platform serving real users, with CI/CD, monitoring, and a component design system.",
       "highlights": [
@@ -87,22 +99,22 @@
     {
       "id": "this-portfolio",
       "name": "This Portfolio (Meta!)",
-      "structure": "house",
+      "structure": "apartment",
       "period": "2026",
-      "summary": "The world you are standing in: deterministic Perlin-noise terrain, chunk streaming, Light2D caves, and a React/Phaser event-bus architecture.",
+      "summary": "The city you are standing in: deterministic Perlin-noise terrain, chunk streaming, Light2D neon, and a React/Phaser event-bus architecture.",
       "highlights": [
         "Chunked tilemap streaming keeps memory flat on an effectively large world",
-        "Perlin noise with constant seed — same world every visit, zero randomness",
+        "Perlin noise with constant seed — same city every visit, zero randomness",
         "Hybrid rendering: WebGL game canvas under an accessible React DOM overlay"
       ],
       "tech": ["Phaser 3", "React 18", "TypeScript", "Vite", "Tailwind", "GSAP"],
-      "link": "https://github.com/yourhandle/terraria-portfolio",
+      "link": "https://github.com/yourhandle/cyberpunk-portfolio",
       "live": ""
     },
     {
       "id": "legacy-migration",
       "name": "Legacy Systems Migration",
-      "structure": "pyramid",
+      "structure": "foundry",
       "period": "2023 — 2024",
       "summary": "Migrated a monolithic legacy backend to typed, containerized services without downtime.",
       "highlights": [
