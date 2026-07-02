@@ -54,7 +54,7 @@ export function LoadingScreen({ onEnter }: { onEnter: () => void }) {
       ref={rootRef}
       className="scanlines absolute inset-0 z-50 flex flex-col items-center justify-center gap-8 overflow-hidden"
       style={{
-        background: 'linear-gradient(to bottom, #1b1c1e 0%, #3d2d1e 55%, #8a6a35 78%, #14151a 100%)',
+        background: 'linear-gradient(to bottom, #0a0c1c 0%, #161230 45%, #4a1a44 78%, #0d0f1e 100%)',
       }}
     >
       {videoOk && (
@@ -85,16 +85,16 @@ export function LoadingScreen({ onEnter }: { onEnter: () => void }) {
 
         {ready ? (
           <button className="pixel-btn pixel-btn-accent mt-4 text-sm" onClick={enter}>
-            ▶ ENTER WORLD
+            ▶ JACK IN
           </button>
         ) : (
           <p className="font-display mt-4 text-[10px]" style={{ color: 'var(--text-secondary)' }}>
-            GENERATING TERRAIN{dots}
+            BOOTING CITY GRID{dots}
           </p>
         )}
 
         <p className="font-body mt-2 max-w-md text-lg" style={{ color: 'var(--text-secondary)' }}>
-          Walk with A/D · Jump with SPACE · Mine with CLICK · Interact with E · Inventory with I
+          Walk with A/D · Jump with SPACE · Dash with SHIFT · Break with CLICK · Interact with E · Inventory with I
         </p>
       </div>
     </div>

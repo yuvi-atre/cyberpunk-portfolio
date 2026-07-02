@@ -7,7 +7,7 @@ interface Props {
 }
 
 /**
- * Game-style dialogue box pinned to the bottom of the screen with a
+ * Terminal-style dialogue readout pinned to the bottom of the screen with a
  * typewriter effect. Represents professional references from
  * portfolio.json experience entries.
  */
@@ -42,16 +42,16 @@ export function DialogueModal({ experience, onClose }: Props) {
   return (
     <div className="absolute inset-x-0 bottom-0 z-20 flex justify-center p-4 md:p-8">
       <div
-        className="parchment-panel w-full max-w-2xl cursor-pointer p-5"
+        className="term-screen w-full max-w-2xl cursor-pointer p-5"
         onClick={advance}
         role="dialog"
         aria-label={`Dialogue with ${experience.npcName}`}
       >
         <div className="mb-1 flex flex-wrap items-baseline gap-3">
-          <span className="font-display text-xs" style={{ color: 'var(--parchment-accent)' }}>
+          <span className="font-display text-xs" style={{ color: 'var(--text-neon)' }}>
             {experience.npcName}
           </span>
-          <span className="font-body text-base" style={{ color: '#6b5a45' }}>
+          <span className="font-body text-base" style={{ color: 'var(--text-secondary)' }}>
             {experience.role}
           </span>
         </div>
@@ -60,7 +60,7 @@ export function DialogueModal({ experience, onClose }: Props) {
           <span className="type-cursor">▌</span>
         </p>
         <div className="mt-2 flex justify-end">
-          <span className="font-display text-[9px]" style={{ color: '#6b5a45' }}>
+          <span className="font-display text-[9px]" style={{ color: 'var(--text-secondary)' }}>
             {done ? (lastLine ? 'CLICK TO CLOSE ✕' : 'CLICK TO CONTINUE ▶') : 'CLICK TO SKIP ▶▶'}
           </span>
         </div>

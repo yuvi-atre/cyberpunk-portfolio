@@ -9,11 +9,11 @@ const TIER_COLOR: Record<string, string> = {
 };
 
 const BLOCK_SWATCH: Record<string, string> = {
-  ore_gold: '#ffcf40',
-  ore_silver: '#d8dce8',
-  crystal_blue: '#54c8f0',
-  ore_copper: '#d3803f',
-  ore_emerald: '#4ec455',
+  data_amber: '#ffb020',
+  data_cyan: '#00f0ff',
+  data_magenta: '#ff2d95',
+  data_green: '#3dff8c',
+  power_cell: '#7df9ff',
 };
 
 interface Props {
@@ -33,7 +33,7 @@ export function InventoryModal({ skills, collected, onClose }: Props) {
         SKILL INVENTORY
       </h2>
       <p className="font-body mt-1 text-lg" style={{ color: 'var(--text-secondary)' }}>
-        {discovered}/{skills.length} discovered — mine glowing ore blocks underground to fill this in.
+        {discovered}/{skills.length} decrypted — break glowing data nodes in the undercity to fill this in.
       </p>
 
       {/* progress bar */}
@@ -68,7 +68,7 @@ export function InventoryModal({ skills, collected, onClose }: Props) {
                 </span>
               </div>
               <div className="font-body mt-2 text-base" style={{ color: found ? TIER_COLOR[skill.tier] : 'var(--text-secondary)' }}>
-                {found ? `${skill.tier} ×${count}` : 'undiscovered'}
+                {found ? `${skill.tier} ×${count}` : 'encrypted'}
               </div>
             </button>
           );
@@ -76,7 +76,7 @@ export function InventoryModal({ skills, collected, onClose }: Props) {
       </div>
 
       {selected && (
-        <div className="pixel-panel-raised mt-4 p-4" style={{ borderColor: 'var(--border-accent)' }}>
+        <div className="pixel-panel-raised mt-4 p-4" style={{ borderColor: 'var(--text-accent)' }}>
           <div className="font-display text-[10px]" style={{ color: 'var(--text-accent)' }}>
             {selected.displayName}
           </div>
