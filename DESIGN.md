@@ -6,9 +6,9 @@ colors:
   surface-panel: "#131629"    # system panel bodies
   surface-raised: "#1a1e38"   # raised cells, buttons, list items
   border-panel: "#2c3554"     # resting borders
-  neon-cyan: "#00f0ff"        # primary neon — terminal borders, links, focus
-  neon-magenta: "#ff2d95"     # secondary neon — holo tags, street lamps
-  accent-amber: "#ffb020"     # flagship elements, headers, calls to action
+  neon-blue: "#00f0ff"        # primary neon — terminal borders, links, focus
+  neon-pink: "#ff2d95"        # accent neon — headers, calls to action, holo tags
+  amber: "#ffb020"            # reserved: loot/cache moments only
   text-primary: "#d8e0ff"
   text-secondary: "#7a86b8"
   danger: "#ff4b4b"
@@ -45,10 +45,11 @@ the star; the UI is its street-side signage.
   default Tailwind sans-serif fonts, no pure black (#000), no rounded corners
   at all, no bounce easing, no blur-heavy glassmorphism, no generic "AI slop"
   gradients.
-- **Borders:** hard 2px solid borders. Neon cyan borders with a tight 6px glow
-  are reserved for terminal screens (reading surfaces); magenta for holo tags;
-  amber for the highest-value elements (flagship projects, calls to action).
-  Resting chrome uses `border-panel`.
+- **Borders:** hard 2px solid borders. Neon blue borders with a tight 6px glow
+  are reserved for terminal screens (reading surfaces); neon pink for holo
+  tags, headers, and the highest-value calls to action (JACK IN, Recruiter
+  Mode); amber only for loot moments (data cache). Resting chrome uses
+  `border-panel`.
 - **Surfaces:** three materials only —
   *system panel* (`surface-panel` body, faint inner cyan trace) for HUD and
   chrome; *terminal screen* (dark gradient body, cyan border, scanline overlay)

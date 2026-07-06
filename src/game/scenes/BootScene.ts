@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { TILE_COLORS, TILE_COUNT, TILE_SIZE, Tile } from '../world/Tiles';
+import { TILE_COUNT, TILE_SIZE, Tile } from '../world/Tiles';
 
 // tiles — CraftPix cyberpunk packs (see src/assets/craftpix/ATTRIBUTION.md)
 import greenTopUrl from '../../assets/craftpix/tiles/green-top.png';
@@ -32,14 +32,17 @@ import wallWindowUrl from '../../assets/craftpix/tiles/wall-window.png';
 import wallDarkUrl from '../../assets/craftpix/tiles/wall-dark.png';
 import wallGridUrl from '../../assets/craftpix/tiles/wall-grid.png';
 
-// characters (48x48 frames)
-import punkIdleUrl from '../../assets/craftpix/player/idle.png';
-import punkRunUrl from '../../assets/craftpix/player/run.png';
-import punkJumpUrl from '../../assets/craftpix/player/jump.png';
-import punkDoubleUrl from '../../assets/craftpix/player/doublejump.png';
-import punkFallUrl from '../../assets/craftpix/player/fall.png';
-import punkDashUrl from '../../assets/craftpix/player/dash.png';
-import punkAttackUrl from '../../assets/craftpix/player/attack.png';
+// player — CraftPix "Guns for Cyberpunk Characters" Biker rig (48x48 frames,
+// armless bodies) + dash/double-jump from the melee/extra packs
+import bikerIdleUrl from '../../assets/craftpix/player/gun-idle.png';
+import bikerRunUrl from '../../assets/craftpix/player/gun-run.png';
+import bikerJumpUrl from '../../assets/craftpix/player/gun-jump.png';
+import bikerDashUrl from '../../assets/craftpix/player/dash.png';
+import bikerDoubleUrl from '../../assets/craftpix/player/doublejump.png';
+import armUrl from '../../assets/craftpix/player/arm.png';
+import gunUrl from '../../assets/craftpix/player/gun.png';
+import bullet1Url from '../../assets/craftpix/player/bullet-1.png';
+import bullet2Url from '../../assets/craftpix/player/bullet-2.png';
 import droneUrl from '../../assets/craftpix/drone/hover-idle.png';
 
 // npc sheets are enumerated by Vite's glob so adding a townsperson is a file drop
@@ -64,9 +67,9 @@ import city5Url from '../../assets/craftpix/bg/city-5.png';
 
 /**
  * Loads the CraftPix cyberpunk art and composites the 32x32 tileset strip
- * (1px extruded margin per tile prevents WebGL seam bleeding). Tiles the
- * packs don't cover — holo signs, coolant, data-node glows — are drawn
- * procedurally on top of pack art.
+ * (1px extruded margin per tile prevents WebGL seam bleeding). Also builds
+ * the runtime-composited textures: the arm+pistol overlay, the two-frame
+ * bullet sheet, the muzzle flash, and the skill shard.
  */
 
 /** Straight one-tile blits: tile id -> loaded texture key. */
@@ -146,14 +149,16 @@ export class BootScene extends Phaser.Scene {
 
     const sheet = (key: string, url: string) =>
       this.load.spritesheet(key, url, { frameWidth: 48, frameHeight: 48 });
-    sheet('punk-idle', punkIdleUrl);
-    sheet('punk-run', punkRunUrl);
-    sheet('punk-jump', punkJumpUrl);
-    sheet('punk-double', punkDoubleUrl);
-    sheet('punk-fall', punkFallUrl);
-    sheet('punk-dash', punkDashUrl);
-    sheet('punk-attack', punkAttackUrl);
+    sheet('biker-idle', bikerIdleUrl);
+    sheet('biker-run', bikerRunUrl);
+    sheet('biker-jump', bikerJumpUrl);
+    sheet('biker-dash', bikerDashUrl);
+    sheet('biker-double', bikerDoubleUrl);
     sheet('drone', droneUrl);
+    this.load.image('arm-src', armUrl);
+    this.load.image('gun-src', gunUrl);
+    this.load.image('bullet-src-1', bullet1Url);
+    this.load.image('bullet-src-2', bullet2Url);
 
     NPC_TEXTURES.length = 0;
     for (const [path, url] of Object.entries(npcSheets)) {
@@ -179,6 +184,10 @@ export class BootScene extends Phaser.Scene {
 
   create(): void {
     this.makeTileset();
+    this.makeArmGun();
+    this.makeBullet();
+    this.makeMuzzleFlash();
+    this.makeShard();
     this.makeParticle();
     this.makeSky();
     this.makeAnimations();
@@ -202,11 +211,9 @@ export class BootScene extends Phaser.Scene {
     ctx.imageSmoothingEnabled = false;
     const cellX = (i: number) => i * STRIDE + 1;
 
-    const blit = (srcKey: string, destTile: number, alpha = 1) => {
+    const blit = (srcKey: string, destTile: number) => {
       const img = this.textures.get(srcKey).getSourceImage() as CanvasImageSource;
-      ctx.globalAlpha = alpha;
       ctx.drawImage(img, 0, 0, T, T, cellX(destTile), 1, T, T);
-      ctx.globalAlpha = 1;
     };
 
     /** Run a local-coordinate draw function inside a tile cell. */
@@ -232,44 +239,20 @@ export class BootScene extends Phaser.Scene {
     const cacheImg = this.textures.get('cache').getSourceImage() as CanvasImageSource;
     ctx.drawImage(cacheImg, 0, 0, T, T, cellX(Tile.CACHE), 1, T, T);
 
-    // data nodes: metal plate base + glowing nugget clusters per skill color
-    const nodes: Array<[Tile, string]> = [
-      [Tile.DATA_AMBER, TILE_COLORS[Tile.DATA_AMBER].accent],
-      [Tile.DATA_CYAN, TILE_COLORS[Tile.DATA_CYAN].accent],
-      [Tile.DATA_MAGENTA, TILE_COLORS[Tile.DATA_MAGENTA].accent],
-      [Tile.DATA_GREEN, TILE_COLORS[Tile.DATA_GREEN].accent],
-    ];
-    for (const [tile, color] of nodes) {
-      blit('tx-metal', tile);
-      inCell(tile, (c) => this.drawDataNodes(c, color));
-    }
-
-    // power cell: dark plate + a bright capsule core
-    blit('tx-metal-dark', Tile.POWER_CELL);
-    inCell(Tile.POWER_CELL, (c) => {
-      c.fillStyle = 'rgba(125, 249, 255, 0.25)';
-      c.fillRect(6, 6, 20, 20);
-      c.fillStyle = '#7df9ff';
-      c.fillRect(11, 9, 10, 14);
-      c.fillStyle = '#ffffff';
-      c.fillRect(13, 11, 3, 5);
-    });
-
     // fully procedural specials
     inCell(Tile.HOLO_SIGN, (c) => this.drawHoloSign(c));
-    inCell(Tile.COOLANT, (c) => this.drawCoolant(c));
     inCell(Tile.NEON_LAMP, (c) => this.drawLamp(c, '#ff2d95', '#ff9ccd'));
     inCell(Tile.LAMP_WHITE, (c) => this.drawLamp(c, '#8fd8ff', '#e8f8ff'));
 
-    // substrate: factory back-panel darkened into an unbreakable shell
+    // substrate: factory back-panel darkened into the boundary shell
     blit('tx-wall-dark', Tile.SUBSTRATE);
     inCell(Tile.SUBSTRATE, (c) => {
       c.fillStyle = 'rgba(6, 5, 12, 0.6)';
       c.fillRect(0, 0, T, T);
     });
 
-    // earthen background walls: darkened terrain fills so tunnels read as
-    // depth, never as sky. Factory back-tiles are pre-shaded — dim lightly.
+    // background walls: pre-shaded factory back-tiles, dimmed so interiors
+    // read as depth behind the action
     blit('tx-green-deep', Tile.WALL_SOIL);
     blit('tx-metal', Tile.WALL_METAL);
     for (const wall of [Tile.WALL_SOIL, Tile.WALL_METAL]) {
@@ -303,65 +286,75 @@ export class BootScene extends Phaser.Scene {
     this.refresh('tiles');
   }
 
-  private drawDataNodes(ctx: CanvasRenderingContext2D, color: string): void {
-    const spots = [
-      [7, 7], [20, 5], [23, 16], [10, 18], [5, 23], [17, 24],
-    ];
-    for (const [sx, sy] of spots) {
-      ctx.fillStyle = color;
-      ctx.fillRect(sx, sy, 5, 5);
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      ctx.fillRect(sx + 1, sy + 1, 2, 2);
+  // ------------------------------------------------- composited gun textures
+  /**
+   * Arm + pistol composite (48x32). The CraftPix guns pack ships the arm and
+   * the gun as separate sprites; blitting them once here gives the Player a
+   * single rotatable overlay. Shoulder pivot sits at pixel (14,16) — the
+   * Player sets its origin to match.
+   */
+  private makeArmGun(): void {
+    const ctx = this.ctxFor('arm-gun', 48, 32);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(this.textures.get('arm-src').getSourceImage() as CanvasImageSource, 0, 0);
+    ctx.drawImage(this.textures.get('gun-src').getSourceImage() as CanvasImageSource, 25, 11);
+    this.refresh('arm-gun');
+  }
+
+  /** Two-frame plasma bullet sheet from the pack's separate frame files. */
+  private makeBullet(): void {
+    const F = 8;
+    const ctx = this.ctxFor('bullet', F * 2, F);
+    ctx.imageSmoothingEnabled = false;
+    const b1 = this.textures.get('bullet-src-1').getSourceImage() as HTMLImageElement;
+    const b2 = this.textures.get('bullet-src-2').getSourceImage() as HTMLImageElement;
+    ctx.drawImage(b1, Math.floor((F - b1.width) / 2), Math.floor((F - b1.height) / 2));
+    ctx.drawImage(b2, F + Math.floor((F - b2.width) / 2), Math.floor((F - b2.height) / 2));
+    const tex = this.textures.get('bullet') as Phaser.Textures.CanvasTexture;
+    tex.add(0, 0, 0, 0, F, F);
+    tex.add(1, 0, F, 0, F, F);
+    this.refresh('bullet');
+  }
+
+  /** Two-frame cyan muzzle flash (16x16 frames, flash at the left edge). */
+  private makeMuzzleFlash(): void {
+    const F = 16;
+    const ctx = this.ctxFor('muzzle-flash', F * 2, F);
+    const draw = (ox: number, r: number) => {
+      ctx.fillStyle = '#7df9ff';
+      ctx.fillRect(ox + 1, 8 - r, r * 2 + 2, r * 2); // horizontal burst
+      ctx.fillRect(ox + 3, 8 - r - 1, r, r * 2 + 2); // vertical spark
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(ox + 2, 7, r + 2, 2);
+    };
+    draw(0, 3);
+    draw(F, 2);
+    const tex = this.textures.get('muzzle-flash') as Phaser.Textures.CanvasTexture;
+    tex.add(0, 0, 0, 0, F, F);
+    tex.add(1, 0, F, 0, F, F);
+    this.refresh('muzzle-flash');
+  }
+
+  /** Skill shard: a white data crystal, tinted per skill at spawn time. */
+  private makeShard(): void {
+    const S = 18;
+    const ctx = this.ctxFor('shard', S, S);
+    const cx = S / 2;
+    // diamond silhouette
+    ctx.fillStyle = '#ffffff';
+    for (let y = 0; y < S; y++) {
+      const half = Math.max(0, Math.floor((S / 2 - Math.abs(y - S / 2)) * 0.8));
+      if (half > 0) ctx.fillRect(cx - half, y, half * 2, 1);
     }
-  }
-
-  /** Street lamp: dark pole with a glowing tube head. */
-  private drawLamp(ctx: CanvasRenderingContext2D, glow: string, core: string): void {
-    // halo
-    ctx.fillStyle = glow;
-    ctx.globalAlpha = 0.22;
-    ctx.fillRect(4, 0, 24, 14);
-    ctx.globalAlpha = 1;
-    // lamp head
-    ctx.fillStyle = '#2c3554';
-    ctx.fillRect(8, 2, 16, 8);
-    ctx.fillStyle = glow;
-    ctx.fillRect(10, 4, 12, 4);
-    ctx.fillStyle = core;
-    ctx.fillRect(12, 5, 8, 2);
-    // pole and base
-    ctx.fillStyle = '#39405a';
-    ctx.fillRect(14, 10, 4, 18);
-    ctx.fillStyle = '#2c3248';
-    ctx.fillRect(10, 28, 12, 4);
-  }
-
-  /** Wall-mounted holographic signboard: dark plate, cyan emitter bars. */
-  private drawHoloSign(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = '#141c2c';
-    ctx.fillRect(2, 4, 28, 22);
-    ctx.strokeStyle = '#2c3a52';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(3, 5, 26, 20);
-    ctx.fillStyle = 'rgba(0, 240, 255, 0.22)';
-    ctx.fillRect(5, 7, 22, 16);
-    ctx.fillStyle = '#00f0ff';
-    ctx.fillRect(7, 10, 18, 2);
-    ctx.fillRect(7, 14, 12, 2);
-    ctx.fillRect(7, 18, 15, 2);
-    // mount post
-    ctx.fillStyle = '#454e68';
-    ctx.fillRect(14, 26, 4, 6);
-  }
-
-  private drawCoolant(ctx: CanvasRenderingContext2D): void {
-    ctx.fillStyle = 'rgba(14, 111, 111, 0.72)';
-    ctx.fillRect(0, 0, 32, 32);
-    ctx.fillStyle = 'rgba(25, 200, 200, 0.5)';
-    ctx.fillRect(0, 0, 32, 3);
-    ctx.fillStyle = 'rgba(125, 249, 255, 0.25)';
-    ctx.fillRect(6, 10, 8, 2);
-    ctx.fillRect(20, 20, 6, 2);
+    // inner facet shading
+    ctx.fillStyle = 'rgba(180, 190, 220, 0.55)';
+    ctx.beginPath();
+    ctx.moveTo(cx, 2);
+    ctx.lineTo(cx + 5, S / 2);
+    ctx.lineTo(cx, S - 2);
+    ctx.closePath();
+    ctx.fill();
+    this.refresh('shard');
   }
 
   private makeParticle(): void {
@@ -405,14 +398,18 @@ export class BootScene extends Phaser.Scene {
   // -------------------------------------------------------------- animations
   private makeAnimations(): void {
     const all = (key: string) => this.anims.generateFrameNumbers(key, {});
+    const range = (key: string, start: number, end: number) =>
+      this.anims.generateFrameNumbers(key, { start, end });
 
-    this.anims.create({ key: 'p-idle', frames: all('punk-idle'), frameRate: 6, repeat: -1 });
-    this.anims.create({ key: 'p-run', frames: all('punk-run'), frameRate: 12, repeat: -1 });
-    this.anims.create({ key: 'p-jump', frames: all('punk-jump'), frameRate: 10 });
-    this.anims.create({ key: 'p-double', frames: all('punk-double'), frameRate: 14 });
-    this.anims.create({ key: 'p-fall', frames: all('punk-fall'), frameRate: 8, repeat: -1 });
-    this.anims.create({ key: 'p-dash', frames: all('punk-dash'), frameRate: 20 });
-    this.anims.create({ key: 'p-attack', frames: all('punk-attack'), frameRate: 16 });
+    this.anims.create({ key: 'p-idle', frames: all('biker-idle'), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'p-run', frames: all('biker-run'), frameRate: 12, repeat: -1 });
+    // the 4-frame jump sheet splits into a rise burst and a fall loop
+    this.anims.create({ key: 'p-jump', frames: range('biker-jump', 0, 1), frameRate: 10 });
+    this.anims.create({ key: 'p-fall', frames: range('biker-jump', 2, 3), frameRate: 6, repeat: -1 });
+    this.anims.create({ key: 'p-dash', frames: all('biker-dash'), frameRate: 20 });
+    this.anims.create({ key: 'p-double', frames: all('biker-double'), frameRate: 14 });
+    this.anims.create({ key: 'bullet-zip', frames: all('bullet'), frameRate: 20, repeat: -1 });
+    this.anims.create({ key: 'muzzle-pop', frames: all('muzzle-flash'), frameRate: 30 });
     this.anims.create({ key: 'drone-hover', frames: all('drone'), frameRate: 8, repeat: -1 });
     this.anims.create({ key: 'screen-flicker', frames: all('wall-screen'), frameRate: 5, repeat: -1 });
 
@@ -420,5 +417,44 @@ export class BootScene extends Phaser.Scene {
       this.anims.create({ key: `${t}-idle`, frames: all(`${t}-idle`), frameRate: 6, repeat: -1 });
       this.anims.create({ key: `${t}-walk`, frames: all(`${t}-walk`), frameRate: 10, repeat: -1 });
     }
+  }
+
+  /** Street lamp: dark pole with a glowing tube head. */
+  private drawLamp(ctx: CanvasRenderingContext2D, glow: string, core: string): void {
+    // halo
+    ctx.fillStyle = glow;
+    ctx.globalAlpha = 0.22;
+    ctx.fillRect(4, 0, 24, 14);
+    ctx.globalAlpha = 1;
+    // lamp head
+    ctx.fillStyle = '#2c3554';
+    ctx.fillRect(8, 2, 16, 8);
+    ctx.fillStyle = glow;
+    ctx.fillRect(10, 4, 12, 4);
+    ctx.fillStyle = core;
+    ctx.fillRect(12, 5, 8, 2);
+    // pole and base
+    ctx.fillStyle = '#39405a';
+    ctx.fillRect(14, 10, 4, 18);
+    ctx.fillStyle = '#2c3248';
+    ctx.fillRect(10, 28, 12, 4);
+  }
+
+  /** Wall-mounted holographic signboard: dark plate, cyan emitter bars. */
+  private drawHoloSign(ctx: CanvasRenderingContext2D): void {
+    ctx.fillStyle = '#141c2c';
+    ctx.fillRect(2, 4, 28, 22);
+    ctx.strokeStyle = '#2c3a52';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(3, 5, 26, 20);
+    ctx.fillStyle = 'rgba(0, 240, 255, 0.22)';
+    ctx.fillRect(5, 7, 22, 16);
+    ctx.fillStyle = '#00f0ff';
+    ctx.fillRect(7, 10, 18, 2);
+    ctx.fillRect(7, 14, 12, 2);
+    ctx.fillRect(7, 18, 15, 2);
+    // mount post
+    ctx.fillStyle = '#454e68';
+    ctx.fillRect(14, 26, 4, 6);
   }
 }

@@ -17,15 +17,17 @@ export interface GameToUIEvents {
   'chest-open': void;
   'skill-collected': Skill;
   'interact-hint': string | null;
-  'player-depth': number;
 }
 
 /** React -> Phaser */
 export interface UIToGameEvents {
   'ui-move': -1 | 0 | 1;
   'ui-jump': boolean;
+  'ui-shoot': void;
   'ui-interact': void;
   'ui-modal-state': boolean;
+  /** true pauses the whole scene (Recruiter Mode), false resumes it */
+  'ui-recruiter-state': boolean;
 }
 
 export const GameEvents = {
@@ -36,9 +38,10 @@ export const GameEvents = {
   CHEST_OPEN: 'chest-open',
   SKILL_COLLECTED: 'skill-collected',
   INTERACT_HINT: 'interact-hint',
-  PLAYER_DEPTH: 'player-depth',
   UI_MOVE: 'ui-move',
   UI_JUMP: 'ui-jump',
+  UI_SHOOT: 'ui-shoot',
   UI_INTERACT: 'ui-interact',
   UI_MODAL_STATE: 'ui-modal-state',
+  UI_RECRUITER_STATE: 'ui-recruiter-state',
 } as const;

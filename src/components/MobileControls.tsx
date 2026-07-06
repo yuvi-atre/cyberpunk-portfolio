@@ -7,6 +7,7 @@ import { EventBus, GameEvents } from '../game/EventBus';
 export function MobileControls() {
   const move = (dir: -1 | 0 | 1) => EventBus.emit(GameEvents.UI_MOVE, dir);
   const jump = (down: boolean) => EventBus.emit(GameEvents.UI_JUMP, down);
+  const shoot = () => EventBus.emit(GameEvents.UI_SHOOT);
   const interact = () => EventBus.emit(GameEvents.UI_INTERACT);
 
   const hold = (start: () => void, end: () => void) => ({
@@ -32,6 +33,9 @@ export function MobileControls() {
       <div className="pointer-events-auto flex gap-3">
         <button className="touch-btn" onPointerDown={interact} aria-label="Interact">
           ✦
+        </button>
+        <button className="touch-btn" onPointerDown={shoot} aria-label="Shoot">
+          ◎
         </button>
         <button className="touch-btn" {...hold(() => jump(true), () => jump(false))} aria-label="Jump">
           ▲

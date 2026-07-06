@@ -8,13 +8,8 @@ const TIER_COLOR: Record<string, string> = {
   familiar: 'var(--text-secondary)',
 };
 
-const BLOCK_SWATCH: Record<string, string> = {
-  data_amber: '#ffb020',
-  data_cyan: '#00f0ff',
-  data_magenta: '#ff2d95',
-  data_green: '#3dff8c',
-  power_cell: '#7df9ff',
-};
+/** Shard tints cycle in collection order — mirrors SHARD_COLORS in Tiles.ts. */
+const SHARD_SWATCH = ['#00f0ff', '#ff2d95', '#ffb020', '#3dff8c'];
 
 interface Props {
   skills: Skill[];
@@ -22,7 +17,7 @@ interface Props {
   onClose: () => void;
 }
 
-/** The gamified skills matrix: mined ores appear here; the rest stay undiscovered. */
+/** The gamified skills matrix: collected shards appear here; the rest stay undiscovered. */
 export function InventoryModal({ skills, collected, onClose }: Props) {
   const [selected, setSelected] = useState<Skill | null>(null);
   const discovered = Object.keys(collected).length;
@@ -33,7 +28,7 @@ export function InventoryModal({ skills, collected, onClose }: Props) {
         SKILL INVENTORY
       </h2>
       <p className="font-body mt-1 text-lg" style={{ color: 'var(--text-secondary)' }}>
-        {discovered}/{skills.length} decrypted — break glowing data nodes in the undercity to fill this in.
+        {discovered}/{skills.length} decrypted — shoot the glowing data shards around the city to fill this in.
       </p>
 
       {/* progress bar */}
@@ -45,7 +40,7 @@ export function InventoryModal({ skills, collected, onClose }: Props) {
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-        {skills.map((skill) => {
+        {skills.map((skill, i) => {
           const count = collected[skill.id] ?? 0;
           const found = count > 0;
           return (
@@ -59,7 +54,7 @@ export function InventoryModal({ skills, collected, onClose }: Props) {
                 <span
                   className="inline-block h-4 w-4 border"
                   style={{
-                    background: found ? BLOCK_SWATCH[skill.blockType] ?? '#888' : '#333',
+                    background: found ? SHARD_SWATCH[i % SHARD_SWATCH.length] : '#333',
                     borderColor: 'var(--border-panel)',
                   }}
                 />

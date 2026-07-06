@@ -5,14 +5,25 @@ import { PortfolioService } from '../services/PortfolioService';
 
 const MIN_DISPLAY_MS = 1200;
 
+const CONTROLS: Array<[string, string]> = [
+  ['A / D', 'walk'],
+  ['SPACE', 'jump'],
+  ['SHIFT', 'dash'],
+  ['CLICK', 'shoot'],
+  ['E', 'interact'],
+  ['I', 'skills'],
+];
+
 /**
- * Cinematic loading gate. If a Higgsfield-generated intro video is dropped
- * at public/intro.mp4 it plays as the backdrop; otherwise a pixel-gradient
- * scene renders. The "Enter World" button appears once the Phaser scene
- * reports ready, and the whole screen wipes away with a GSAP transition.
+ * Welcome gate: a synthwave horizon — deep-indigo sky, glowing pink/blue
+ * horizon line, and an animated perspective grid floor — under a chromatic
+ * glitch title. If an intro video exists at public/intro.mp4 it plays as
+ * the backdrop instead. "JACK IN" appears once the Phaser scene reports
+ * ready, and the whole screen wipes away with a GSAP transition.
  */
 export function LoadingScreen({ onEnter }: { onEnter: () => void }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const [videoOk, setVideoOk] = useState(true);
   const [dots, setDots] = useState('');
@@ -36,6 +47,15 @@ export function LoadingScreen({ onEnter }: { onEnter: () => void }) {
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    if (!cardRef.current) return;
+    gsap.fromTo(
+      cardRef.current.children,
+      { y: 18, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.55, ease: 'power2.out', stagger: 0.09, delay: 0.15 }
+    );
+  }, []);
+
   const enter = () => {
     if (!rootRef.current) return;
     gsap.to(rootRef.current, {
@@ -52,12 +72,13 @@ export function LoadingScreen({ onEnter }: { onEnter: () => void }) {
   return (
     <div
       ref={rootRef}
-      className="scanlines absolute inset-0 z-50 flex flex-col items-center justify-center gap-8 overflow-hidden"
+      className="scanlines absolute inset-0 z-50 flex flex-col items-center justify-center overflow-hidden"
       style={{
-        background: 'linear-gradient(to bottom, #0a0c1c 0%, #161230 45%, #4a1a44 78%, #0d0f1e 100%)',
+        background:
+          'linear-gradient(to bottom, #0b0d20 0%, #141233 38%, #33184f 52%, #4a1a44 54%, #12142a 100%)',
       }}
     >
-      {videoOk && (
+      {videoOk ? (
         <video
           className="absolute inset-0 h-full w-full object-cover opacity-70"
           src="./intro.mp4"
@@ -67,35 +88,71 @@ export function LoadingScreen({ onEnter }: { onEnter: () => void }) {
           playsInline
           onError={() => setVideoOk(false)}
         />
+      ) : (
+        <>
+          <div className="horizon-glow" />
+          <div className="grid-floor" />
+          {/* far skyline silhouette */}
+          <div
+            className="pointer-events-none absolute inset-x-0"
+            style={{
+              bottom: '46%',
+              height: 90,
+              background:
+                'linear-gradient(to top, rgba(20, 16, 44, 0.9), transparent), repeating-linear-gradient(to right, rgba(24, 20, 52, 0.95) 0 26px, transparent 26px 34px, rgba(30, 24, 64, 0.95) 34px 52px, transparent 52px 66px)',
+              maskImage: 'linear-gradient(to top, #fff 55%, transparent)',
+              WebkitMaskImage: 'linear-gradient(to top, #fff 55%, transparent)',
+            }}
+          />
+        </>
       )}
 
-      <div className="relative flex flex-col items-center gap-6 px-6 text-center">
+      <div ref={cardRef} className="relative flex flex-col items-center gap-6 px-6 text-center">
+        <p
+          className="font-display text-[9px] tracking-widest md:text-[10px]"
+          style={{ color: 'var(--neon-blue)', textShadow: 'var(--glow-neon)' }}
+        >
+          ▚ INTERACTIVE PORTFOLIO v2.0 ▞
+        </p>
+
         <h1
-          className="font-display leading-relaxed"
-          style={{ fontSize: 'clamp(16px, 4vw, 28px)', color: 'var(--text-accent)', textShadow: '3px 3px 0 rgba(0,0,0,0.6)' }}
+          className="glitch-title font-display leading-relaxed"
+          style={{ fontSize: 'clamp(18px, 5vw, 34px)' }}
         >
           {personal.name}
         </h1>
-        <p className="font-display text-[10px] md:text-sm" style={{ color: 'var(--text-secondary)' }}>
+
+        <p
+          className="font-display text-[10px] md:text-sm"
+          style={{ color: 'var(--neon-pink)', textShadow: 'var(--glow-magenta)' }}
+        >
           {personal.title}
         </p>
-        <p className="font-body text-xl md:text-2xl" style={{ color: 'var(--text-primary)' }}>
+
+        <p className="font-body max-w-md text-xl md:text-2xl" style={{ color: 'var(--text-primary)' }}>
           {personal.tagline}
         </p>
 
         {ready ? (
-          <button className="pixel-btn pixel-btn-accent mt-4 text-sm" onClick={enter}>
+          <button className="pixel-btn pixel-btn-accent mt-3 text-sm" onClick={enter}>
             ▶ JACK IN
           </button>
         ) : (
-          <p className="font-display mt-4 text-[10px]" style={{ color: 'var(--text-secondary)' }}>
+          <p className="font-display mt-3 text-[10px]" style={{ color: 'var(--text-secondary)' }}>
             BOOTING CITY GRID{dots}
           </p>
         )}
 
-        <p className="font-body mt-2 max-w-md text-lg" style={{ color: 'var(--text-secondary)' }}>
-          Walk with A/D · Jump with SPACE · Dash with SHIFT · Break with CLICK · Interact with E · Inventory with I
-        </p>
+        <div className="mt-2 flex max-w-lg flex-wrap items-center justify-center gap-x-3 gap-y-2">
+          {CONTROLS.map(([key, action]) => (
+            <span key={key} className="flex items-center gap-1.5">
+              <kbd className="keycap">{key}</kbd>
+              <span className="font-body text-base" style={{ color: 'var(--text-secondary)' }}>
+                {action}
+              </span>
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   );

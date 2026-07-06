@@ -12,11 +12,12 @@ import { ChestModal } from './components/ChestModal';
 import { SignToast } from './components/SignToast';
 import { SkillToast } from './components/SkillToast';
 import { MobileControls } from './components/MobileControls';
+import { RecruiterMode } from './components/RecruiterMode';
 
 /**
  * Application shell. Owns all UI state and the z-index stack:
- * game canvas (z-0) < HUD (z-10) < modals (z-20) < loading screen (z-50).
- * All game communication flows through the EventBus only.
+ * game canvas (z-0) < HUD (z-10) < modals (z-20) < recruiter mode (z-30) <
+ * loading screen (z-50). All game communication flows through the EventBus.
  */
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -26,10 +27,10 @@ export default function App() {
   const [chestOpen, setChestOpen] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [inventoryOpen, setInventoryOpen] = useState(false);
+  const [recruiterOpen, setRecruiterOpen] = useState(false);
   const [collected, setCollected] = useState<Record<string, number>>({});
   const [skillToast, setSkillToast] = useState<Skill | null>(null);
   const [hint, setHint] = useState<string | null>(null);
-  const [depth, setDepth] = useState(0);
 
   const isTouch = useMemo(
     () => typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches,
@@ -43,6 +44,11 @@ export default function App() {
     EventBus.emit(GameEvents.UI_MODAL_STATE, anyModalOpen);
   }, [anyModalOpen]);
 
+  // Recruiter Mode pauses the whole Phaser scene, not just player input.
+  useEffect(() => {
+    EventBus.emit(GameEvents.UI_RECRUITER_STATE, recruiterOpen);
+  }, [recruiterOpen]);
+
   useEffect(() => {
     const onDialogue = (e: Experience) => setDialogue(e);
     const onProject = (p: Project) => setProject(p);
@@ -53,7 +59,6 @@ export default function App() {
       setSkillToast(s);
     };
     const onHint = (label: string | null) => setHint(label);
-    const onDepth = (d: number) => setDepth(d);
 
     EventBus.on(GameEvents.DIALOGUE_OPEN, onDialogue);
     EventBus.on(GameEvents.PROJECT_OPEN, onProject);
@@ -61,7 +66,6 @@ export default function App() {
     EventBus.on(GameEvents.CHEST_OPEN, onChest);
     EventBus.on(GameEvents.SKILL_COLLECTED, onSkill);
     EventBus.on(GameEvents.INTERACT_HINT, onHint);
-    EventBus.on(GameEvents.PLAYER_DEPTH, onDepth);
     return () => {
       EventBus.off(GameEvents.DIALOGUE_OPEN, onDialogue);
       EventBus.off(GameEvents.PROJECT_OPEN, onProject);
@@ -69,7 +73,6 @@ export default function App() {
       EventBus.off(GameEvents.CHEST_OPEN, onChest);
       EventBus.off(GameEvents.SKILL_COLLECTED, onSkill);
       EventBus.off(GameEvents.INTERACT_HINT, onHint);
-      EventBus.off(GameEvents.PLAYER_DEPTH, onDepth);
     };
   }, []);
 
@@ -79,19 +82,23 @@ export default function App() {
     setChestOpen(false);
     setAboutOpen(false);
     setInventoryOpen(false);
+    setRecruiterOpen(false);
   }, []);
 
-  // Global keys: I toggles inventory, Escape closes everything.
+  // Global keys: I toggles inventory, R toggles recruiter mode, Escape closes.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') closeAll();
-      if ((e.key === 'i' || e.key === 'I') && !dialogue && !project && !chestOpen && !aboutOpen) {
+      if ((e.key === 'i' || e.key === 'I') && !anyModalOpen && !recruiterOpen) {
         setInventoryOpen((v) => !v);
+      }
+      if ((e.key === 'r' || e.key === 'R') && !anyModalOpen) {
+        setRecruiterOpen((v) => !v);
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [closeAll, dialogue, project, chestOpen, aboutOpen]);
+  }, [closeAll, anyModalOpen, recruiterOpen]);
 
   const totalSkills = PortfolioService.skills.length;
   const discovered = Object.keys(collected).length;
@@ -100,20 +107,20 @@ export default function App() {
     <div className="relative h-full w-full overflow-hidden">
       <PhaserGame />
 
-      {!loading && (
+      {!loading && !recruiterOpen && (
         <HUD
           personal={PortfolioService.personal}
           hint={hint}
-          depth={depth}
           discovered={discovered}
           totalSkills={totalSkills}
           isTouch={isTouch}
           onOpenAbout={() => setAboutOpen(true)}
           onOpenInventory={() => setInventoryOpen(true)}
+          onOpenRecruiter={() => setRecruiterOpen(true)}
         />
       )}
 
-      {!loading && isTouch && !anyModalOpen && <MobileControls />}
+      {!loading && isTouch && !anyModalOpen && !recruiterOpen && <MobileControls />}
 
       {dialogue && <DialogueModal experience={dialogue} onClose={() => setDialogue(null)} />}
       {project && <ProjectModal project={project} onClose={() => setProject(null)} />}
@@ -126,6 +133,7 @@ export default function App() {
       )}
       {aboutOpen && <AboutModal onClose={() => setAboutOpen(false)} />}
       {chestOpen && <ChestModal onClose={() => setChestOpen(false)} />}
+      {recruiterOpen && <RecruiterMode onClose={() => setRecruiterOpen(false)} />}
 
       {sign && <SignToast sign={sign} onDone={() => setSign(null)} />}
       {skillToast && <SkillToast skill={skillToast} onDone={() => setSkillToast(null)} />}
