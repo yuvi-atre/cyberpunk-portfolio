@@ -1,7 +1,8 @@
 /**
  * Tile registry. Every block in the world is an integer index into the
  * tileset strip composited in BootScene from the CraftPix cyberpunk packs.
- * -1 means air.
+ * -1 means air. The world is static — tiles are never added or removed at
+ * runtime, so there is no breakable/unbreakable distinction anymore.
  */
 export const TILE_SIZE = 32; // CraftPix cyberpunk tilesets are 32x32
 
@@ -38,35 +39,18 @@ export enum Tile {
   BOARD = 25,
   HOLO_SIGN = 26,
   CACHE = 27, // data cache (chest)
-  COOLANT = 28, // swimmable liquid in the deep undercity
-  SUBSTRATE = 29, // unbreakable world shell
-  // data nodes — mining these yields skills from portfolio.json
-  DATA_AMBER = 30,
-  DATA_CYAN = 31,
-  DATA_MAGENTA = 32,
-  DATA_GREEN = 33,
-  POWER_CELL = 34, // glowing cell (light source)
+  SUBSTRATE = 28, // world shell / boundary pillars
   // background walls — rendered on a separate non-colliding layer
-  WALL_PANEL = 35,
-  WALL_RIVET = 36,
-  WALL_WINDOW = 37,
-  WALL_DARK = 38,
-  WALL_GRID = 39,
-  WALL_SOIL = 40,
-  WALL_METAL = 41,
+  WALL_PANEL = 29,
+  WALL_RIVET = 30,
+  WALL_WINDOW = 31,
+  WALL_DARK = 32,
+  WALL_GRID = 33,
+  WALL_SOIL = 34,
+  WALL_METAL = 35,
 }
 
-export const TILE_COUNT = 42;
-
-export const WALL_TILES: number[] = [
-  Tile.WALL_PANEL,
-  Tile.WALL_RIVET,
-  Tile.WALL_WINDOW,
-  Tile.WALL_DARK,
-  Tile.WALL_GRID,
-  Tile.WALL_SOIL,
-  Tile.WALL_METAL,
-];
+export const TILE_COUNT = 36;
 
 /** Tiles the player collides with. */
 export const SOLID_TILES: number[] = [
@@ -91,41 +75,10 @@ export const SOLID_TILES: number[] = [
   Tile.SCRAP,
   Tile.LOCKER,
   Tile.SUBSTRATE,
-  Tile.DATA_AMBER,
-  Tile.DATA_CYAN,
-  Tile.DATA_MAGENTA,
-  Tile.DATA_GREEN,
-  Tile.POWER_CELL,
-];
-
-/** Tiles that can never be broken. */
-export const UNBREAKABLE_TILES: number[] = [
-  Tile.SUBSTRATE,
-  Tile.DOOR,
-  Tile.DOOR_TOP,
   Tile.CACHE,
-  Tile.HOLO_SIGN,
 ];
 
-/** Data-node tile ids — breaking these yields a skill item. */
-export const ORE_TILES: number[] = [
-  Tile.DATA_AMBER,
-  Tile.DATA_CYAN,
-  Tile.DATA_MAGENTA,
-  Tile.DATA_GREEN,
-  Tile.POWER_CELL,
-];
-
-/** Maps portfolio.json skill blockType strings to tile ids. */
-export const BLOCK_TYPE_TO_TILE: Record<string, Tile> = {
-  data_amber: Tile.DATA_AMBER,
-  data_cyan: Tile.DATA_CYAN,
-  data_magenta: Tile.DATA_MAGENTA,
-  data_green: Tile.DATA_GREEN,
-  power_cell: Tile.POWER_CELL,
-};
-
-/** Base palette per tile — drives break particles and node glow colors. */
+/** Base palette per tile — drives bullet-impact particle colors. */
 export const TILE_COLORS: Record<number, { base: string; accent: string; dark: string }> = {
   [Tile.PAVEMENT]: { base: '#3f4a52', accent: '#5dbb63', dark: '#2b333a' },
   [Tile.SOIL]: { base: '#3a3347', accent: '#4a4258', dark: '#2a2536' },
@@ -155,11 +108,8 @@ export const TILE_COLORS: Record<number, { base: string; accent: string; dark: s
   [Tile.BOARD]: { base: '#4a4258', accent: '#ff2d95', dark: '#332d40' },
   [Tile.HOLO_SIGN]: { base: '#102030', accent: '#00f0ff', dark: '#0a1420' },
   [Tile.CACHE]: { base: '#4c5570', accent: '#ffb020', dark: '#363d52' },
-  [Tile.COOLANT]: { base: '#0e6f6f', accent: '#19c8c8', dark: '#0a4a4a' },
   [Tile.SUBSTRATE]: { base: '#1a1626', accent: '#241f33', dark: '#120f1c' },
-  [Tile.DATA_AMBER]: { base: '#454e68', accent: '#ffb020', dark: '#323950' },
-  [Tile.DATA_CYAN]: { base: '#454e68', accent: '#00f0ff', dark: '#323950' },
-  [Tile.DATA_MAGENTA]: { base: '#454e68', accent: '#ff2d95', dark: '#323950' },
-  [Tile.DATA_GREEN]: { base: '#454e68', accent: '#3dff8c', dark: '#323950' },
-  [Tile.POWER_CELL]: { base: '#343a50', accent: '#7df9ff', dark: '#262b3c' },
 };
+
+/** Accent colors cycled across skill shards (index = skill order). */
+export const SHARD_COLORS = ['#00f0ff', '#ff2d95', '#ffb020', '#3dff8c'];

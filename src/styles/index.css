@@ -1,27 +1,32 @@
 @import 'tailwindcss';
 
-/* Design tokens — mirrors DESIGN.md (Cyber Intrusion terminal) */
+/* Design tokens — neon pink/blue cyberpunk duotone.
+   Negative constraints: no pure blacks, no default fonts, no generic
+   rounded corners (hard 0-radius pixel chrome everywhere). */
 :root {
   --font-display: 'Press Start 2P', monospace;
   --font-body: 'VT323', monospace;
 
   --surface-deep: #0d0f1e; /* deep indigo — page + panel bodies (never #000) */
-  --surface-panel: #131629;
+  --surface-panel: #12152b;
   --surface-raised: #1a1e38;
   --border-panel: #2c3554;
-  --border-neon: #00f0ff;
-  --border-magenta: #ff2d95;
+  --neon-pink: #ff2d95;
+  --neon-blue: #00f0ff;
+  --border-neon: var(--neon-blue);
+  --border-magenta: var(--neon-pink);
   --text-primary: #d8e0ff;
   --text-secondary: #7a86b8;
-  --text-neon: #00f0ff;
-  --text-accent: #ffb020; /* amber — headers, flagship elements */
+  --text-neon: var(--neon-blue);
+  --text-accent: var(--neon-pink); /* headers, flagship elements */
+  --amber: #ffb020; /* reserved: cache/loot moments only */
   --danger: #ff4b4b;
   --success: #3dff8c;
   --info: #6bd7ff;
 
-  --glow-neon: 0 0 6px rgba(0, 240, 255, 0.45);
-  --glow-magenta: 0 0 6px rgba(255, 45, 149, 0.45);
-  --panel-shadow: 0 4px 0 rgba(0, 0, 0, 0.5);
+  --glow-neon: 0 0 6px rgba(0, 240, 255, 0.45), 0 0 18px rgba(0, 240, 255, 0.18);
+  --glow-magenta: 0 0 6px rgba(255, 45, 149, 0.45), 0 0 18px rgba(255, 45, 149, 0.18);
+  --panel-shadow: 0 4px 0 rgba(4, 3, 10, 0.55);
 }
 
 html,
@@ -69,7 +74,7 @@ canvas {
   position: relative;
   background: linear-gradient(to bottom, #0e1424, #101a30);
   color: var(--text-primary);
-  border: 2px solid var(--border-neon);
+  border: 2px solid var(--neon-blue);
   border-radius: 0;
   box-shadow: var(--panel-shadow), var(--glow-neon);
 }
@@ -89,9 +94,9 @@ canvas {
 
 /* Holo tag: short notices and sign tooltips — magenta emitter */
 .holo-panel {
-  background: rgba(19, 22, 41, 0.92);
+  background: rgba(18, 21, 43, 0.92);
   color: var(--text-primary);
-  border: 2px solid var(--border-magenta);
+  border: 2px solid var(--neon-pink);
   border-radius: 0;
   box-shadow: var(--panel-shadow), var(--glow-magenta);
 }
@@ -105,26 +110,39 @@ canvas {
   border-radius: 0;
   padding: 8px 12px;
   cursor: pointer;
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 0 3px 0 rgba(4, 3, 10, 0.55);
   transition: transform 0.18s ease-out, border-color 0.18s ease-out, box-shadow 0.18s ease-out;
   user-select: none;
 }
 .pixel-btn:hover {
-  border-color: var(--border-neon);
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5), var(--glow-neon);
+  border-color: var(--neon-blue);
+  box-shadow: 0 3px 0 rgba(4, 3, 10, 0.55), var(--glow-neon);
   transform: translateY(-1px);
 }
 .pixel-btn:active {
   transform: translateY(2px);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 0 rgba(4, 3, 10, 0.55);
 }
 .pixel-btn-accent {
-  border: 2px solid var(--text-accent);
-  color: var(--text-accent);
+  border: 2px solid var(--neon-pink);
+  color: var(--neon-pink);
 }
 .pixel-btn-accent:hover {
-  border-color: var(--text-accent);
-  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.5), 0 0 6px rgba(255, 176, 32, 0.45);
+  border-color: var(--neon-pink);
+  box-shadow: 0 3px 0 rgba(4, 3, 10, 0.55), var(--glow-magenta);
+}
+
+/* Keycap chip for control hints */
+.keycap {
+  font-family: var(--font-display);
+  font-size: 9px;
+  color: var(--neon-blue);
+  background: var(--surface-raised);
+  border: 2px solid var(--border-panel);
+  border-bottom-width: 4px;
+  border-radius: 0;
+  padding: 5px 8px 4px;
+  white-space: nowrap;
 }
 
 /* Blinking cursor for typewriter dialogue */
@@ -142,7 +160,7 @@ canvas {
   animation: blink 0.9s infinite steps(1);
 }
 
-/* CRT scanline flourish for the loading screen */
+/* CRT scanline flourish */
 .scanlines::after {
   content: '';
   position: absolute;
@@ -152,9 +170,90 @@ canvas {
     to bottom,
     transparent 0,
     transparent 3px,
-    rgba(0, 0, 0, 0.16) 3px,
-    rgba(0, 0, 0, 0.16) 4px
+    rgba(4, 3, 10, 0.16) 3px,
+    rgba(4, 3, 10, 0.16) 4px
   );
+}
+
+/* Welcome screen: perspective neon grid floor scrolling toward the horizon */
+.grid-floor {
+  position: absolute;
+  left: -25%;
+  right: -25%;
+  bottom: 0;
+  height: 46%;
+  pointer-events: none;
+  transform: perspective(340px) rotateX(58deg);
+  transform-origin: 50% 0%;
+  background-image:
+    linear-gradient(to right, rgba(255, 45, 149, 0.34) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 240, 255, 0.3) 2px, transparent 2px);
+  background-size: 56px 56px;
+  animation: grid-scroll 1.6s linear infinite;
+  mask-image: linear-gradient(to bottom, transparent 0%, #fff 32%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #fff 32%);
+}
+@keyframes grid-scroll {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 0 56px;
+  }
+}
+
+/* Horizon glow line between sky and grid */
+.horizon-glow {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 46%;
+  height: 3px;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--neon-pink) 25%,
+    var(--neon-blue) 75%,
+    transparent
+  );
+  box-shadow: 0 0 18px rgba(255, 45, 149, 0.7), 0 0 42px rgba(0, 240, 255, 0.4);
+}
+
+/* Chromatic glitch title */
+.glitch-title {
+  position: relative;
+  color: var(--text-primary);
+  text-shadow:
+    2px 0 rgba(255, 45, 149, 0.85),
+    -2px 0 rgba(0, 240, 255, 0.85),
+    4px 4px 0 rgba(4, 3, 10, 0.65);
+  animation: glitch-jitter 3.2s infinite steps(1);
+}
+@keyframes glitch-jitter {
+  0%, 92% {
+    transform: translate(0, 0);
+    clip-path: none;
+  }
+  93% {
+    transform: translate(-2px, 1px);
+  }
+  94% {
+    transform: translate(2px, -1px);
+    clip-path: inset(20% 0 55% 0);
+  }
+  95% {
+    transform: translate(0, 0);
+    clip-path: none;
+  }
+  97% {
+    transform: translate(1px, 0);
+    clip-path: inset(60% 0 15% 0);
+  }
+  98% {
+    transform: translate(0, 0);
+    clip-path: none;
+  }
 }
 
 /* Touch controls */
@@ -175,7 +274,7 @@ canvas {
   touch-action: none;
 }
 .touch-btn:active {
-  border-color: var(--border-neon);
+  border-color: var(--neon-blue);
   background: rgba(26, 30, 56, 0.92);
   box-shadow: var(--glow-neon);
 }

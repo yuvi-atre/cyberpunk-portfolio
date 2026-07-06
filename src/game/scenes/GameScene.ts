@@ -1,20 +1,23 @@
 import Phaser from 'phaser';
 import { EventBus, GameEvents } from '../EventBus';
-import { generateWorld, type GeneratedWorld } from '../world/WorldGenerator';
+import { buildCityMap, SURFACE_Y, type CityWorld, type WorldMarker } from '../world/CityMap';
 import { ChunkManager } from '../world/ChunkManager';
-import { ORE_TILES, SOLID_TILES, TILE_COLORS, TILE_SIZE, Tile, UNBREAKABLE_TILES } from '../world/Tiles';
+import { SHARD_COLORS, TILE_SIZE } from '../world/Tiles';
 import { Player } from '../entities/Player';
 import { NPC } from '../entities/NPC';
 import { Drone } from '../entities/Drone';
 import { ParallaxBackground } from '../parallax/ParallaxBackground';
 import { PortfolioService } from '../../services/PortfolioService';
 import { NPC_TEXTURES } from './BootScene';
+import { GAME_ZOOM } from '../main';
 
-const MINE_RADIUS_PX = 4.5 * TILE_SIZE;
 const INTERACT_RADIUS_PX = 3 * TILE_SIZE;
+const BULLET_LIFE_MS = 900;
+const SHARD_TOUCH_RADIUS = 26;
+const SHARD_SHOT_RADIUS = 20;
 
 interface Interactable {
-  kind: 'npc' | 'sign' | 'project' | 'chest';
+  kind: 'npc' | 'sign' | 'project' | 'chest' | 'elevator';
   id: string;
   label: string;
   x: number;
@@ -22,22 +25,41 @@ interface Interactable {
   sprite?: NPC;
 }
 
+interface Shard {
+  id: string;
+  sprite: Phaser.GameObjects.Sprite;
+  light: Phaser.GameObjects.Light | null;
+  color: number;
+}
+
+/**
+ * The city scene. A small hand-authored map: the player walks a guided
+ * street, talks to NPCs, rides the tower elevator, and shoots floating data
+ * shards to collect skills. There is no terrain mutation of any kind.
+ */
 export class GameScene extends Phaser.Scene {
-  private world!: GeneratedWorld;
+  private world!: CityWorld;
   private chunks!: ChunkManager;
   private player!: Player;
+  private bullets!: Phaser.Physics.Arcade.Group;
   private npcs: NPC[] = [];
+  private shards: Shard[] = [];
   private interactables: Interactable[] = [];
+  private elevators = new Map<string, Array<{ x: number; y: number }>>();
   private currentHint: Interactable | null = null;
   private modalOpen = false;
-  private mineCooldown = 0;
-  private pointerHeld = false;
+  private riding = false;
   private scanTimer = 0;
-  private depthTimer = 0;
   private useLights = false;
+  private parallax!: ParallaxBackground;
 
   private onUiInteract = () => this.tryInteract();
   private onModalState = (open: boolean) => (this.modalOpen = open);
+  private onRecruiterState = (open: boolean) => {
+    this.modalOpen = open;
+    if (open) this.scene.pause();
+    else this.scene.resume();
+  };
 
   constructor() {
     super('Game');
@@ -45,7 +67,11 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     this.useLights = this.game.renderer.type === Phaser.WEBGL;
-    this.world = generateWorld();
+    this.world = buildCityMap();
+    this.npcs = [];
+    this.shards = [];
+    this.interactables = [];
+    this.elevators.clear();
 
     const worldW = this.world.width * TILE_SIZE;
     const worldH = this.world.height * TILE_SIZE;
@@ -53,23 +79,36 @@ export class GameScene extends Phaser.Scene {
 
     this.parallax = new ParallaxBackground(this);
 
-    // player
+    // bullet pool — recycled sprites, gravity-free, collide with terrain
+    this.bullets = this.physics.add.group({
+      defaultKey: 'bullet',
+      maxSize: 16,
+      allowGravity: false,
+    });
+
     this.player = new Player(
       this,
       this.world.spawn.tx * TILE_SIZE + 16,
-      this.world.spawn.ty * TILE_SIZE
+      this.world.spawn.ty * TILE_SIZE,
+      this.bullets
     );
 
-    // entities from world markers
     this.spawnFromMarkers();
 
-    // chunk streaming (collides player + NPCs with terrain)
-    this.chunks = new ChunkManager(this, this.world, [this.player, ...this.npcs]);
+    // chunk streaming (collides player, NPCs and bullets with terrain)
+    this.chunks = new ChunkManager(this, this.world, [
+      this.player,
+      ...this.npcs,
+      this.bullets,
+    ]);
 
-    // camera
     const cam = this.cameras.main;
-    cam.setBounds(0, 0, worldW, worldH);
-    cam.setZoom(1.5);
+    // clamp the view a few rows below street level so the frame stays on
+    // the city, not the solid ground fill
+    cam.setBounds(0, 0, worldW, (SURFACE_Y + 7) * TILE_SIZE);
+    // integer zoom matched to the display DPR — one texel = whole device
+    // pixels, so tiles read at native ~32 CSS px like the source art
+    cam.setZoom(GAME_ZOOM);
     cam.setRoundPixels(true);
     cam.startFollow(this.player, true, 0.12, 0.12);
     this.chunks.update(cam);
@@ -78,27 +117,25 @@ export class GameScene extends Phaser.Scene {
     if (this.useLights) {
       this.lights.enable();
       this.lights.setAmbientColor(0xaab2d8);
-      this.lights.addLight(0, 0, 0); // pool warm-up
     }
 
-    // input: breaking / placing — held state is tracked via canvas-originated
-    // events only (polling activePointer.isDown can read phantom state)
+    // input: click shoots, E interacts
     this.input.mouse?.disableContextMenu();
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
-      if (!p.rightButtonDown()) this.pointerHeld = true;
-      this.handlePointer(p);
+      if (this.modalOpen) return;
+      const world = p.positionToCamera(this.cameras.main) as Phaser.Math.Vector2;
+      this.player.shootAt(world.x, world.y);
     });
-    this.input.on('pointerup', () => (this.pointerHeld = false));
-    this.game.events.on(Phaser.Core.Events.BLUR, () => (this.pointerHeld = false));
-
     const kb = this.input.keyboard!;
     kb.addKey(Phaser.Input.Keyboard.KeyCodes.E).on('down', () => this.tryInteract());
 
     EventBus.on(GameEvents.UI_INTERACT, this.onUiInteract);
     EventBus.on(GameEvents.UI_MODAL_STATE, this.onModalState);
+    EventBus.on(GameEvents.UI_RECRUITER_STATE, this.onRecruiterState);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       EventBus.off(GameEvents.UI_INTERACT, this.onUiInteract);
       EventBus.off(GameEvents.UI_MODAL_STATE, this.onModalState);
+      EventBus.off(GameEvents.UI_RECRUITER_STATE, this.onRecruiterState);
       this.chunks.destroy();
     });
 
@@ -110,15 +147,13 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  /** Dev helper: drop the player at a tile column's surface. */
+  /** Dev helper: drop the player at a tile column's street level. */
   teleport(tx: number): void {
-    const ty = this.world.surface[Phaser.Math.Clamp(tx, 0, this.world.width - 1)];
-    this.player.setPosition(tx * TILE_SIZE + 16, (ty - 3) * TILE_SIZE);
+    this.player.setPosition(tx * TILE_SIZE + 16, (SURFACE_Y - 3) * TILE_SIZE);
     this.player.setVelocity(0, 0);
   }
 
-  private parallax!: ParallaxBackground;
-
+  // ------------------------------------------------------------------ spawn
   private spawnFromMarkers(): void {
     // named NPCs cycle through a fixed texture order so casting is stable
     const namedTextures = NPC_TEXTURES.length ? NPC_TEXTURES : ['t1'];
@@ -136,7 +171,8 @@ export class GameScene extends Phaser.Scene {
             px,
             py - 16,
             namedTextures[npcIndex++ % namedTextures.length],
-            exp.npcName
+            exp.npcName,
+            2
           );
           this.npcs.push(npc);
           this.interactables.push({
@@ -155,7 +191,9 @@ export class GameScene extends Phaser.Scene {
             this,
             px,
             py - 16,
-            namedTextures[walkerIndex++ % namedTextures.length]
+            namedTextures[walkerIndex++ % namedTextures.length],
+            undefined,
+            4
           );
           this.npcs.push(npc);
           break;
@@ -164,7 +202,7 @@ export class GameScene extends Phaser.Scene {
           new Drone(this, px, py);
           break;
         case 'billboard':
-          this.placeBillboard(m.id, px, py);
+          this.placeBillboard(m.id, px, py + 16);
           break;
         case 'sign':
           this.interactables.push({ kind: 'sign', id: m.id, label: 'Read holo-sign', x: px, y: py });
@@ -172,6 +210,7 @@ export class GameScene extends Phaser.Scene {
         case 'project': {
           const project = PortfolioService.projectByStructure(m.id);
           if (!project) break;
+          this.placeMonument(px, m.ty * TILE_SIZE + TILE_SIZE);
           this.interactables.push({
             kind: 'project',
             id: m.id,
@@ -184,6 +223,25 @@ export class GameScene extends Phaser.Scene {
         case 'chest':
           this.interactables.push({ kind: 'chest', id: m.id, label: 'Access data cache', x: px, y: py });
           break;
+        case 'shard': {
+          // tint index follows the skills array so the inventory swatches match
+          const idx = PortfolioService.skills.findIndex((s) => s.id === m.id);
+          this.placeShard(m, px, py, Math.max(0, idx));
+          break;
+        }
+        case 'elevator': {
+          const stops = this.elevators.get(m.id) ?? [];
+          stops.push({ x: px, y: py });
+          this.elevators.set(m.id, stops);
+          this.interactables.push({
+            kind: 'elevator',
+            id: m.id,
+            label: 'Take the elevator',
+            x: px,
+            y: py,
+          });
+          break;
+        }
       }
     }
   }
@@ -195,16 +253,52 @@ export class GameScene extends Phaser.Scene {
       .image(px, py, `billboard-${size}`)
       .setOrigin(0.5, 1)
       .setDepth(12);
-    const ad = this.add
+    if (this.useLights) {
+      frame.setPipeline('Light2D');
+      this.lights.addLight(px, py - 30, 150, 0x6bd7ff, 0.55);
+    }
+    // the ad face stays unlit so it glows against the night
+    this.add
       .image(px, py - (size === 'lg' ? 24 : 26), `ad-${id}`)
       .setOrigin(0.5, 1)
       .setDepth(13);
-    if (this.useLights) {
-      frame.setPipeline('Light2D');
-      // the ad face stays unlit so it glows against the night
-      this.lights.addLight(px, py - 30, 150, 0x6bd7ff, 0.55);
-      void ad;
-    }
+  }
+
+  /** Project monument: a flickering wall screen on the ground + cyan glow. */
+  private placeMonument(px: number, groundY: number): void {
+    this.add
+      .sprite(px, groundY, 'wall-screen')
+      .setOrigin(0.5, 1)
+      .setDepth(12)
+      .play('screen-flicker');
+    if (this.useLights) this.lights.addLight(px, groundY - 20, 140, 0x00f0ff, 0.8);
+  }
+
+  /** Floating skill shard, bobbing on a tween, shot or touched to collect. */
+  private placeShard(m: WorldMarker, px: number, py: number, index: number): void {
+    const color = Phaser.Display.Color.HexStringToColor(
+      SHARD_COLORS[index % SHARD_COLORS.length]
+    ).color;
+    const sprite = this.add.sprite(px, py, 'shard').setDepth(15).setTint(color);
+    this.tweens.add({
+      targets: sprite,
+      y: py - 6,
+      duration: 900 + (index % 3) * 140,
+      yoyo: true,
+      repeat: -1,
+      ease: 'sine.inOut',
+    });
+    const light = this.useLights ? this.lights.addLight(px, py, 110, color, 0.9) : null;
+    this.shards.push({ id: m.id, sprite, light, color });
+  }
+
+  private collectShard(shard: Shard): void {
+    this.shards = this.shards.filter((s) => s !== shard);
+    this.burstParticles(shard.sprite.x, shard.sprite.y, shard.color);
+    shard.sprite.destroy();
+    if (shard.light) this.lights.removeLight(shard.light);
+    const skill = PortfolioService.skillById(shard.id);
+    if (skill) EventBus.emit(GameEvents.SKILL_COLLECTED, skill);
   }
 
   // ------------------------------------------------------------ interaction
@@ -224,7 +318,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private tryInteract(): void {
-    if (this.modalOpen) return;
+    if (this.modalOpen || this.riding) return;
     const it = this.nearestInteractable();
     if (!it) return;
     switch (it.kind) {
@@ -246,95 +340,88 @@ export class GameScene extends Phaser.Scene {
       case 'chest':
         EventBus.emit(GameEvents.CHEST_OPEN);
         break;
+      case 'elevator':
+        this.rideElevator(it);
+        break;
     }
   }
 
-  // ---------------------------------------------------------------- breaking
-  private handlePointer(pointer: Phaser.Input.Pointer): void {
-    if (this.modalOpen) return;
-    const world = pointer.positionToCamera(this.cameras.main) as Phaser.Math.Vector2;
-    if (pointer.rightButtonDown()) {
-      this.placeBlock(world.x, world.y);
-    } else {
-      this.mineBlock(world.x, world.y);
-    }
+  /** Elevator: fade out, move to the paired stop, fade back in. */
+  private rideElevator(it: Interactable): void {
+    const stops = this.elevators.get(it.id) ?? [];
+    if (stops.length < 2) return;
+    const nearest = stops.reduce((a, b) =>
+      Phaser.Math.Distance.Between(this.player.x, this.player.y, a.x, a.y) <
+      Phaser.Math.Distance.Between(this.player.x, this.player.y, b.x, b.y)
+        ? a
+        : b
+    );
+    const target = stops.find((s) => s !== nearest);
+    if (!target) return;
+
+    this.riding = true;
+    const cam = this.cameras.main;
+    cam.fadeOut(220, 10, 9, 18);
+    cam.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.player.setPosition(target.x, target.y - 8);
+      this.player.setVelocity(0, 0);
+      this.chunks.update(cam);
+      cam.fadeIn(260, 10, 9, 18);
+      this.riding = false;
+    });
   }
 
-  private mineBlock(wx: number, wy: number): void {
-    if (Phaser.Math.Distance.Between(this.player.x, this.player.y, wx, wy) > MINE_RADIUS_PX) return;
-    const tx = Math.floor(wx / TILE_SIZE);
-    const ty = Math.floor(wy / TILE_SIZE);
-    const tile = this.chunks.getTile(tx, ty);
-    if (tile === Tile.AIR || tile === Tile.COOLANT) return;
-    if (UNBREAKABLE_TILES.includes(tile)) return;
-    // only blocks exposed to air/coolant (or non-solid dressing) can be broken
-    const exposed = [
-      this.chunks.getTile(tx - 1, ty),
-      this.chunks.getTile(tx + 1, ty),
-      this.chunks.getTile(tx, ty - 1),
-      this.chunks.getTile(tx, ty + 1),
-    ].some((n) => !SOLID_TILES.includes(n));
-    if (!exposed) return;
+  // ------------------------------------------------------------------ fx
+  /** Temporary burst emitter — cheap, destroyed right after. */
+  private burstParticles(x: number, y: number, tint: number): void {
+    const emitter = this.add.particles(x, y, 'particle', {
+      speed: { min: 40, max: 130 },
+      angle: { min: 0, max: 360 },
+      gravityY: 300,
+      lifespan: 450,
+      scale: { start: 1, end: 0 },
+      tint,
+      emitting: false,
+    });
+    emitter.setDepth(30);
+    emitter.explode(Phaser.Math.Between(6, 10));
+    this.time.delayedCall(600, () => emitter.destroy());
+  }
 
-    this.chunks.setTile(tx, ty, Tile.AIR);
-    this.player.playAttack();
-    this.burstParticles(tx * TILE_SIZE + 16, ty * TILE_SIZE + 16, tile);
+  /** Retire bullets on wall hits / timeout; collect shards they pass. */
+  private sweepBullets(): void {
+    const now = this.time.now;
+    for (const obj of this.bullets.getMatching('active', true)) {
+      const bullet = obj as Phaser.Physics.Arcade.Sprite;
+      const body = bullet.body as Phaser.Physics.Arcade.Body;
+      const hitWall =
+        body.blocked.left || body.blocked.right || body.blocked.up || body.blocked.down;
+      const expired = now - ((bullet.getData('bornAt') as number) ?? now) > BULLET_LIFE_MS;
 
-    // data nodes yield skills from portfolio.json
-    if (ORE_TILES.includes(tile)) {
-      const key = ty * this.world.width + tx;
-      const skillId = this.world.oreMap.get(key);
-      if (skillId) {
-        this.world.oreMap.delete(key);
-        const skill = PortfolioService.skillById(skillId);
-        if (skill) EventBus.emit(GameEvents.SKILL_COLLECTED, skill);
+      let hitShard: Shard | null = null;
+      for (const shard of this.shards) {
+        if (
+          Phaser.Math.Distance.Between(bullet.x, bullet.y, shard.sprite.x, shard.sprite.y) <
+          SHARD_SHOT_RADIUS
+        ) {
+          hitShard = shard;
+          break;
+        }
+      }
+
+      if (hitShard) this.collectShard(hitShard);
+      if (hitWall) this.burstParticles(bullet.x, bullet.y, 0x7df9ff);
+      if (hitWall || expired || hitShard) {
+        bullet.disableBody(true, true);
       }
     }
   }
 
-  private placeBlock(wx: number, wy: number): void {
-    if (Phaser.Math.Distance.Between(this.player.x, this.player.y, wx, wy) > MINE_RADIUS_PX) return;
-    const tx = Math.floor(wx / TILE_SIZE);
-    const ty = Math.floor(wy / TILE_SIZE);
-    if (this.chunks.getTile(tx, ty) !== Tile.AIR) return;
-    const hasNeighbor = [
-      this.chunks.getTile(tx - 1, ty),
-      this.chunks.getTile(tx + 1, ty),
-      this.chunks.getTile(tx, ty - 1),
-      this.chunks.getTile(tx, ty + 1),
-    ].some((n) => SOLID_TILES.includes(n));
-    if (!hasNeighbor) return;
-    // don't entomb the player or an NPC
-    const rect = new Phaser.Geom.Rectangle(tx * TILE_SIZE, ty * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-    const bodies = [this.player, ...this.npcs];
-    if (bodies.some((b) => Phaser.Geom.Rectangle.Overlaps(rect, b.getBounds()))) return;
-
-    this.chunks.setTile(tx, ty, Tile.CRATE);
-  }
-
-  /** Temporary burst emitter per break — cheap, and destroyed right after. */
-  private burstParticles(x: number, y: number, tile: number): void {
-    const color = Phaser.Display.Color.HexStringToColor(
-      TILE_COLORS[tile]?.base ?? '#888888'
-    ).color;
-    const emitter = this.add.particles(x, y, 'particle', {
-      speed: { min: 40, max: 130 },
-      angle: { min: 200, max: 340 },
-      gravityY: 500,
-      lifespan: 450,
-      scale: { start: 1, end: 0 },
-      tint: color,
-      emitting: false,
-    });
-    emitter.setDepth(30);
-    emitter.explode(Phaser.Math.Between(4, 8));
-    this.time.delayedCall(600, () => emitter.destroy());
-  }
-
   // ----------------------------------------------------------------- update
   update(_time: number, delta: number): void {
-    this.player.updatePlayer(this.chunks);
+    this.player.updatePlayer();
     this.chunks.update(this.cameras.main);
+    this.sweepBullets();
 
     // wake NPC physics once their terrain is streamed in (camera view + margin)
     const view = this.cameras.main.worldView;
@@ -342,32 +429,18 @@ export class GameScene extends Phaser.Scene {
       if (!npc.activated && view.contains(npc.x, npc.y)) npc.activate();
     }
 
-    const ptx = Phaser.Math.Clamp(Math.floor(this.player.x / TILE_SIZE), 0, this.world.width - 1);
-    const surfaceY = this.world.surface[ptx];
-    const depthPx = this.player.y - surfaceY * TILE_SIZE;
-    this.parallax.update(this.cameras.main, depthPx, delta);
-
-    // ambient light dims with depth (street level = neon night glow)
-    if (this.useLights) {
-      const t = Phaser.Math.Clamp(depthPx / (24 * TILE_SIZE), 0, 1);
-      const c = Phaser.Display.Color.Interpolate.ColorWithColor(
-        new Phaser.Display.Color(170, 178, 216),
-        new Phaser.Display.Color(38, 40, 58),
-        1,
-        t
-      );
-      this.lights.setAmbientColor(Phaser.Display.Color.GetColor(c.r, c.g, c.b));
+    // walking through a shard collects it too (touch devices, no-aim path)
+    for (const shard of this.shards) {
+      if (
+        Phaser.Math.Distance.Between(this.player.x, this.player.y, shard.sprite.x, shard.sprite.y) <
+        SHARD_TOUCH_RADIUS
+      ) {
+        this.collectShard(shard);
+        break;
+      }
     }
 
-    // drag-breaking while pointer held
-    this.mineCooldown -= delta;
-    if (this.pointerHeld && this.mineCooldown <= 0 && !this.modalOpen) {
-      const world = this.input.activePointer.positionToCamera(
-        this.cameras.main
-      ) as Phaser.Math.Vector2;
-      this.mineBlock(world.x, world.y);
-      this.mineCooldown = 160;
-    }
+    this.parallax.update(this.cameras.main, 0, delta);
 
     // interaction hint scan (throttled)
     this.scanTimer -= delta;
@@ -378,13 +451,6 @@ export class GameScene extends Phaser.Scene {
         this.currentHint = nearest;
         EventBus.emit(GameEvents.INTERACT_HINT, nearest ? nearest.label : null);
       }
-    }
-
-    // depth telemetry for the HUD
-    this.depthTimer -= delta;
-    if (this.depthTimer <= 0) {
-      this.depthTimer = 300;
-      EventBus.emit(GameEvents.PLAYER_DEPTH, Math.max(0, Math.round(depthPx / TILE_SIZE)));
     }
   }
 }

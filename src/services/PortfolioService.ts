@@ -23,12 +23,6 @@ export interface Skill {
   id: string;
   displayName: string;
   tier: SkillTier;
-  /** Which generated ore tile this skill spawns as underground. */
-  blockType: string;
-  /** [minDepth, maxDepth] in tiles below the surface line. */
-  spawnDepth: [number, number];
-  /** Relative spawn frequency (higher = more veins). */
-  abundance: number;
   description: string;
 }
 

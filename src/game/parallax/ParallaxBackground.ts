@@ -52,8 +52,10 @@ export class ParallaxBackground {
 
   private addLayer(def: (typeof LAYER_DEFS)[number], depth: number): void {
     const texWidth = this.scene.textures.get(def.key).getSourceImage().width;
-    // enough images to cover the widest plausible viewport + 1 buffer
-    const count = Math.ceil(2560 / texWidth) + 1;
+    // enough images to cover the widest plausible viewport + 1 buffer —
+    // the canvas is sized in device pixels, so measure the real game width
+    const maxViewport = Math.max(2560, this.scene.scale.width * 1.25);
+    const count = Math.ceil(maxViewport / texWidth) + 1;
     const images: Phaser.GameObjects.Image[] = [];
     for (let i = 0; i < count; i++) {
       // tintFill flattens the grey art into a solid silhouette color, so each

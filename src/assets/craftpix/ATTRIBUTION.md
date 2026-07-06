@@ -6,7 +6,8 @@ games; redistribution of the raw assets as assets is not permitted).
 
 | Directory | Source pack |
 |---|---|
-| `player/` | Free 3 Cyberpunk Characters Pixel Art (Biker) + Free Extra Animations for Cyberpunk Characters |
+| `player/gun-*`, `arm`, `gun`, `bullet-*` | Free Guns for Cyberpunk Characters Pixel Art (Biker) |
+| `player/dash`, `doublejump` | Free 3 Cyberpunk Characters Pixel Art (Biker) + Free Extra Animations for Cyberpunk Characters |
 | `npcs/` | Free Townspeople Cyberpunk Pixel Art |
 | `drone/` | Free Drones Pack Pixel Art |
 | `tiles/green-*` | Free Green Zone Tileset Pixel Art |

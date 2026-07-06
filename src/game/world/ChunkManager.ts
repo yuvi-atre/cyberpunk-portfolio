@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { SOLID_TILES, TILE_SIZE, Tile } from './Tiles';
-import type { GeneratedWorld } from './WorldGenerator';
+import type { CityWorld } from './CityMap';
 
 export const CHUNK_SIZE = 32; // tiles per chunk side
 
@@ -30,7 +30,7 @@ export class ChunkManager {
 
   constructor(
     private scene: Phaser.Scene,
-    private world: GeneratedWorld,
+    private world: CityWorld,
     private collideTargets: Phaser.Types.Physics.Arcade.ArcadeColliderType[]
   ) {
     this.useLights = scene.game.renderer.type === Phaser.WEBGL;
@@ -127,9 +127,6 @@ export class ChunkManager {
           if (rows[y][x] === Tile.LAMP_WHITE) {
             lights.push(this.scene.lights.addLight(wx, wy - 4, 180, 0xbfe8ff, 0.85));
           }
-          if (rows[y][x] === Tile.POWER_CELL) {
-            lights.push(this.scene.lights.addLight(wx, wy, 150, 0x7df9ff, 1.0));
-          }
           if (rows[y][x] === Tile.HOLO_SIGN) {
             lights.push(this.scene.lights.addLight(wx, wy, 120, 0x00f0ff, 0.7));
           }
@@ -153,38 +150,6 @@ export class ChunkManager {
     chunk.map.destroy(); // destroys the layer too
     chunk.wallMap.destroy();
     this.chunks.delete(key);
-  }
-
-  getTile(tx: number, ty: number): number {
-    const { world } = this;
-    if (tx < 0 || tx >= world.width || ty < 0 || ty >= world.height) return Tile.SUBSTRATE;
-    return world.data[ty * world.width + tx];
-  }
-
-  /**
-   * Blocks are data, not entities: mutate the world matrix and let the
-   * owning chunk layer redraw the cell. Never spawn physics sprites here.
-   * Background walls are untouched — mined tunnels keep their backdrop.
-   */
-  setTile(tx: number, ty: number, tile: number): void {
-    const { world } = this;
-    if (tx < 0 || tx >= world.width || ty < 0 || ty >= world.height) return;
-    world.data[ty * world.width + tx] = tile;
-
-    const chunk = this.chunks.get(`${Math.floor(tx / CHUNK_SIZE)},${Math.floor(ty / CHUNK_SIZE)}`);
-    if (!chunk) return;
-    const lx = tx % CHUNK_SIZE;
-    const ly = ty % CHUNK_SIZE;
-    if (tile === Tile.AIR) {
-      chunk.layer.removeTileAt(lx, ly, true, true);
-    } else {
-      const t = chunk.layer.putTileAt(tile, lx, ly, true);
-      t.setCollision(SOLID_TILES.includes(tile));
-    }
-  }
-
-  removeTileAtWorldXY(wx: number, wy: number): void {
-    this.setTile(Math.floor(wx / TILE_SIZE), Math.floor(wy / TILE_SIZE), Tile.AIR);
   }
 
   destroy(): void {
