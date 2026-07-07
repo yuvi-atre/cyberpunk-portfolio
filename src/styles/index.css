@@ -1,10 +1,19 @@
 @import 'tailwindcss';
 
+/* Display face: CraftPix cyberpunk GUI pack block font — chunkier and far
+   more readable than Press Start 2P, which stays in the stack as fallback
+   for the decorative glyphs (★ ◈ ▚) it doesn't cover. */
+@font-face {
+  font-family: 'CyberpunkCraftpixPixel';
+  src: url('/fonts/CyberpunkCraftpixPixel.otf') format('opentype');
+  font-display: swap;
+}
+
 /* Design tokens — neon pink/blue cyberpunk duotone.
    Negative constraints: no pure blacks, no default fonts, no generic
    rounded corners (hard 0-radius pixel chrome everywhere). */
 :root {
-  --font-display: 'Press Start 2P', monospace;
+  --font-display: 'CyberpunkCraftpixPixel', 'Press Start 2P', monospace;
   --font-body: 'VT323', monospace;
 
   --surface-deep: #0d0f1e; /* deep indigo — page + panel bodies (never #000) */

@@ -75,7 +75,36 @@ engineering role. Goal: polished, performant, and impossible to get lost in.
    `__game.loop.step(t += 16.7)` in a loop with increasing timestamps
    (identical timestamps = zero delta = frozen physics), and use the
    reduced-motion path to bypass GSAP-gated UI transitions.
-11. **Neon pink/blue theme** in `src/styles/index.css`: `--neon-pink
+11. **Hitscan laser, not projectiles** (2026-07-07 game-feel pass): the
+   pellet bullets are gone. Player.shootAt keeps the rig/cooldown/flash and
+   delegates to a fire callback; GameScene.fireLaser raycasts 8px steps to
+   the first SOLID tile (ChunkManager.getTile is back for this), stretches
+   the guns-pack 'laser' sprite (six 48x48 beam frames, additive cyan
+   tint) across the ray for ~130ms, and collects every shard within 14px
+   of the segment (distToSegment). Beams pass through non-solid DOOR tiles
+   by design.
+12. **Interaction affordances**: BootScene bakes 'ind-talk' (bubble) and
+   'ind-arrow' (chevron) white glyphs; GameScene tints them (cyan NPCs,
+   amber sign/project/chest/elevator), bobs static ones with tweens, and
+   follows NPCs per-frame with a manual sine bob (a y-tween would fight
+   the follow). The nearest-in-range interactable's glyph scales to 1.5 in
+   the throttled hint scan.
+13. **Door tiles are factory Tile_56 (transom header) over Tile_44 (leaf)**
+   — the originals were two unrelated framed tiles that read as boxes.
+   Fixing a door = replacing tiles/door-top.png + tiles/door.png contents;
+   no code changes.
+14. **Density pass tiles** (appended to the enum, never renumber): VENT,
+   PIPE_H/V/X (non-solid so jumps never bonk), WINDOW_BIG, SHOP_GLASS,
+   PANEL_LIT, RAIL (non-solid). Posters/ads: BootScene glob-loads
+   props/ads/*.png (poster-01..15 = 22x40 wall posters, adsq-01..15 = 64x64
+   faces); a CityMap 'billboard' marker with id "poster-NN" or "sq-NN"
+   places them — no scene code needed. Posters must sit on wall-backed
+   columns or interiors, never open sky.
+15. **Display font**: public/fonts/CyberpunkCraftpixPixel.otf (CraftPix GUI
+   pack, full upper/lower/digits) is --font-display; Press Start 2P stays
+   as fallback for decorative glyphs (★ ◈ ▚) it lacks. In-canvas Phaser
+   labels intentionally keep Press Start 2P (no font-load race).
+16. **Neon pink/blue theme** in `src/styles/index.css`: `--neon-pink
    #ff2d95`, `--neon-blue #00f0ff`, deep indigo surfaces (never pure
    black), zero border radius, Press Start 2P + VT323. Amber is reserved
    for loot moments only. Welcome screen = synthwave grid floor

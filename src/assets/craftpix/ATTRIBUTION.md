@@ -17,3 +17,5 @@ games; redistribution of the raw assets as assets is not permitted).
 | `bg/` | Free Scrolling City Backgrounds Pixel Art (set 4, night) |
 | `props/billboard-*`, `ad-*` | Free Billboards and Advertising Pixel Art |
 | `props/cache-sheet`, `screen-sheet` | Free Industrial Zone Tileset Pixel Art (animated objects) |
+| `props/ads/`, `props/billboard-sq`, `props/billboard-pillar` | Free Billboards and Advertising Pixel Art |
+| `public/fonts/CyberpunkCraftpixPixel.otf` | Free GUI for Cyberpunk Pixel Art (display font) |

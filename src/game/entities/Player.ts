@@ -6,8 +6,7 @@ const JUMP_VELOCITY = -480;
 const DASH_SPEED = 420;
 const DASH_MS = 220;
 const DASH_COOLDOWN_MS = 700;
-const SHOOT_COOLDOWN_MS = 220;
-const BULLET_SPEED = 720;
+const SHOOT_COOLDOWN_MS = 260;
 
 /** Shoulder pivot offset from the sprite center (body faces right). */
 const SHOULDER_X = -7;
@@ -23,6 +22,8 @@ const MUZZLE_DY = -2.5;
  * pistol upright when aiming left). Reads native keyboard input and
  * synthesized mobile input from the EventBus through the same abstraction.
  * Supports run, jump, double jump, dash (SHIFT) and shooting (CLICK).
+ * Firing itself is delegated to the scene: the player owns the rig and the
+ * trigger, the scene owns the hitscan laser and its consequences.
  */
 export class Player extends Phaser.Physics.Arcade.Sprite {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -31,7 +32,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private keyW: Phaser.Input.Keyboard.Key;
 
   private arm: Phaser.GameObjects.Sprite;
-  private bullets: Phaser.Physics.Arcade.Group;
+  private fire: (mx: number, my: number, angle: number) => void;
   private aimAngle = 0;
   private recoil = 0;
   private shootReadyAt = 0;
@@ -56,10 +57,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     scene: Phaser.Scene,
     x: number,
     y: number,
-    bullets: Phaser.Physics.Arcade.Group
+    fire: (mx: number, my: number, angle: number) => void
   ) {
     super(scene, x, y, 'biker-idle', 0);
-    this.bullets = bullets;
+    this.fire = fire;
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
@@ -124,15 +125,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const mx = s.x + MUZZLE_DX * cos - mdy * sin;
     const my = s.y + MUZZLE_DX * sin + mdy * cos;
 
-    const bullet = this.bullets.get(mx, my, 'bullet') as Phaser.Physics.Arcade.Sprite | null;
-    if (!bullet) return;
-    bullet.enableBody(true, mx, my, true, true);
-    bullet.setDepth(22).setRotation(angle).play('bullet-zip');
-    (bullet.body as Phaser.Physics.Arcade.Body).setAllowGravity(false);
-    bullet.setVelocity(cos * BULLET_SPEED, sin * BULLET_SPEED);
-    bullet.setData('bornAt', now);
-
-    // muzzle flash sprite + a transient light pop
+    // muzzle flash sprite + a transient light pop; the scene draws the beam
     const flash = this.scene.add
       .sprite(mx, my, 'muzzle-flash')
       .setRotation(angle)
@@ -143,6 +136,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       const light = this.scene.lights.addLight(mx, my, 110, 0x7df9ff, 1.1);
       this.scene.time.delayedCall(70, () => this.scene.lights.removeLight(light));
     }
+
+    this.fire(mx, my, angle);
   }
 
   /** Mobile shoot button: fire level in the facing direction. */

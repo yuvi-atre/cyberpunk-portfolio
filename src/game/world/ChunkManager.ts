@@ -38,6 +38,13 @@ export class ChunkManager {
     this.chunksY = Math.ceil(world.height / CHUNK_SIZE);
   }
 
+  /** Tile at a tile coordinate; out-of-bounds reads as solid substrate. */
+  getTile(tx: number, ty: number): number {
+    const { world } = this;
+    if (tx < 0 || ty < 0 || tx >= world.width || ty >= world.height) return Tile.SUBSTRATE;
+    return world.data[ty * world.width + tx];
+  }
+
   /** Ensure chunks covering the camera (+buffer) exist; cull distant ones. */
   update(camera: Phaser.Cameras.Scene2D.Camera): void {
     const view = camera.worldView;
@@ -129,6 +136,10 @@ export class ChunkManager {
           }
           if (rows[y][x] === Tile.HOLO_SIGN) {
             lights.push(this.scene.lights.addLight(wx, wy, 120, 0x00f0ff, 0.7));
+          }
+          // doorways glow so entrances read from across the street
+          if (rows[y][x] === Tile.DOOR) {
+            lights.push(this.scene.lights.addLight(wx, wy - 8, 100, 0x00f0ff, 0.5));
           }
         }
       }

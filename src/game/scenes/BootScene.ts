@@ -26,6 +26,14 @@ import fenceUrl from '../../assets/craftpix/tiles/fence.png';
 import scrapUrl from '../../assets/craftpix/tiles/scrap.png';
 import lockerUrl from '../../assets/craftpix/tiles/locker.png';
 import boardUrl from '../../assets/craftpix/tiles/board.png';
+import ventUrl from '../../assets/craftpix/tiles/vent.png';
+import pipeHUrl from '../../assets/craftpix/tiles/pipe-h.png';
+import pipeVUrl from '../../assets/craftpix/tiles/pipe-v.png';
+import pipeXUrl from '../../assets/craftpix/tiles/pipe-x.png';
+import windowBigUrl from '../../assets/craftpix/tiles/window-big.png';
+import shopGlassUrl from '../../assets/craftpix/tiles/shop-glass.png';
+import panelLitUrl from '../../assets/craftpix/tiles/panel-lit.png';
+import railUrl from '../../assets/craftpix/tiles/rail.png';
 import wallPanelUrl from '../../assets/craftpix/tiles/wall-panel.png';
 import wallRivetUrl from '../../assets/craftpix/tiles/wall-rivet.png';
 import wallWindowUrl from '../../assets/craftpix/tiles/wall-window.png';
@@ -43,10 +51,19 @@ import armUrl from '../../assets/craftpix/player/arm.png';
 import gunUrl from '../../assets/craftpix/player/gun.png';
 import bullet1Url from '../../assets/craftpix/player/bullet-1.png';
 import bullet2Url from '../../assets/craftpix/player/bullet-2.png';
+import laserUrl from '../../assets/craftpix/player/laser.png';
 import droneUrl from '../../assets/craftpix/drone/hover-idle.png';
 
 // npc sheets are enumerated by Vite's glob so adding a townsperson is a file drop
 const npcSheets = import.meta.glob('../../assets/craftpix/npcs/*.png', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+}) as Record<string, string>;
+
+// street posters and square ad faces — texture key = file basename, so a
+// CityMap billboard marker with id "poster-07" needs only a file drop
+const adSheets = import.meta.glob('../../assets/craftpix/props/ads/*.png', {
   eager: true,
   query: '?url',
   import: 'default',
@@ -57,6 +74,8 @@ import cacheSheetUrl from '../../assets/craftpix/props/cache-sheet.png';
 import screenSheetUrl from '../../assets/craftpix/props/screen-sheet.png';
 import billboardLgUrl from '../../assets/craftpix/props/billboard-lg.png';
 import billboardSmUrl from '../../assets/craftpix/props/billboard-sm.png';
+import billboardSqUrl from '../../assets/craftpix/props/billboard-sq.png';
+import billboardPillarUrl from '../../assets/craftpix/props/billboard-pillar.png';
 import adLg1Url from '../../assets/craftpix/props/ad-lg-1.png';
 import adLg2Url from '../../assets/craftpix/props/ad-lg-2.png';
 import adSm1Url from '../../assets/craftpix/props/ad-sm-1.png';
@@ -98,6 +117,14 @@ const TILE_SOURCES: Partial<Record<Tile, string>> = {
   [Tile.SCRAP]: 'tx-scrap',
   [Tile.LOCKER]: 'tx-locker',
   [Tile.BOARD]: 'tx-board',
+  [Tile.VENT]: 'tx-vent',
+  [Tile.PIPE_H]: 'tx-pipe-h',
+  [Tile.PIPE_V]: 'tx-pipe-v',
+  [Tile.PIPE_X]: 'tx-pipe-x',
+  [Tile.WINDOW_BIG]: 'tx-window-big',
+  [Tile.SHOP_GLASS]: 'tx-shop-glass',
+  [Tile.PANEL_LIT]: 'tx-panel-lit',
+  [Tile.RAIL]: 'tx-rail',
   [Tile.WALL_PANEL]: 'tx-wall-panel',
   [Tile.WALL_RIVET]: 'tx-wall-rivet',
   [Tile.WALL_WINDOW]: 'tx-wall-window',
@@ -130,6 +157,14 @@ const TILE_URLS: Record<string, string> = {
   'tx-scrap': scrapUrl,
   'tx-locker': lockerUrl,
   'tx-board': boardUrl,
+  'tx-vent': ventUrl,
+  'tx-pipe-h': pipeHUrl,
+  'tx-pipe-v': pipeVUrl,
+  'tx-pipe-x': pipeXUrl,
+  'tx-window-big': windowBigUrl,
+  'tx-shop-glass': shopGlassUrl,
+  'tx-panel-lit': panelLitUrl,
+  'tx-rail': railUrl,
   'tx-wall-panel': wallPanelUrl,
   'tx-wall-rivet': wallRivetUrl,
   'tx-wall-window': wallWindowUrl,
@@ -159,6 +194,8 @@ export class BootScene extends Phaser.Scene {
     this.load.image('gun-src', gunUrl);
     this.load.image('bullet-src-1', bullet1Url);
     this.load.image('bullet-src-2', bullet2Url);
+    // laser beam: 6 horizontal beam-pulse frames from the guns pack
+    this.load.spritesheet('laser', laserUrl, { frameWidth: 48, frameHeight: 48 });
 
     NPC_TEXTURES.length = 0;
     for (const [path, url] of Object.entries(npcSheets)) {
@@ -173,6 +210,12 @@ export class BootScene extends Phaser.Scene {
     this.load.spritesheet('wall-screen', screenSheetUrl, { frameWidth: 32, frameHeight: 32 });
     this.load.image('billboard-lg', billboardLgUrl);
     this.load.image('billboard-sm', billboardSmUrl);
+    this.load.image('billboard-sq', billboardSqUrl);
+    this.load.image('billboard-pillar', billboardPillarUrl);
+    for (const [path, url] of Object.entries(adSheets)) {
+      const m = path.match(/([\w-]+)\.png$/);
+      if (m) this.load.image(m[1], url);
+    }
     this.load.image('ad-lg-1', adLg1Url);
     this.load.image('ad-lg-2', adLg2Url);
     this.load.image('ad-sm-1', adSm1Url);
@@ -188,6 +231,7 @@ export class BootScene extends Phaser.Scene {
     this.makeBullet();
     this.makeMuzzleFlash();
     this.makeShard();
+    this.makeIndicators();
     this.makeParticle();
     this.makeSky();
     this.makeAnimations();
@@ -233,6 +277,26 @@ export class BootScene extends Phaser.Scene {
     inCell(Tile.WINDOW, (c) => {
       c.fillStyle = 'rgba(0, 240, 255, 0.16)';
       c.fillRect(6, 6, T - 12, T - 12);
+    });
+    inCell(Tile.WINDOW_BIG, (c) => {
+      c.fillStyle = 'rgba(232, 248, 255, 0.10)';
+      c.fillRect(4, 6, T - 8, T - 10);
+    });
+
+    // doors get emissive cyan trim so they read as enterable, not as more
+    // wall — the factory transom/leaf art alone blends into panel facades
+    inCell(Tile.DOOR, (c) => {
+      c.fillStyle = 'rgba(0, 240, 255, 0.10)';
+      c.fillRect(3, 0, T - 6, T);
+      c.fillStyle = '#00f0ff';
+      c.fillRect(2, 0, 2, T);
+      c.fillRect(T - 4, 0, 2, T);
+    });
+    inCell(Tile.DOOR_TOP, (c) => {
+      c.fillStyle = 'rgba(0, 240, 255, 0.10)';
+      c.fillRect(3, 10, T - 6, T - 10);
+      c.fillStyle = '#00f0ff';
+      c.fillRect(3, 8, T - 6, 2);
     });
 
     // data cache: first frame of the industrial chest animation
@@ -357,6 +421,36 @@ export class BootScene extends Phaser.Scene {
     this.refresh('shard');
   }
 
+  /**
+   * Interaction indicators: chunky white pixel glyphs on dark outlines,
+   * drawn white so the scene can tint them per use (amber = interact,
+   * cyan = talk). 'ind-arrow' is a down chevron; 'ind-talk' a speech bubble.
+   */
+  private makeIndicators(): void {
+    const a = this.ctxFor('ind-arrow', 16, 12);
+    const rows: Array<[number, number]> = [[0, 16], [2, 12], [4, 8], [6, 4]];
+    for (const [y, w] of rows) {
+      a.fillStyle = '#10121f';
+      a.fillRect((16 - w) / 2, y, w, 4);
+    }
+    for (const [y, w] of rows) {
+      a.fillStyle = '#ffffff';
+      if (w > 4) a.fillRect((16 - w) / 2 + 2, y + 1, w - 4, 2);
+    }
+    this.refresh('ind-arrow');
+
+    const t = this.ctxFor('ind-talk', 16, 14);
+    t.fillStyle = '#10121f';
+    t.fillRect(0, 0, 16, 11); // bubble backing/outline
+    t.fillRect(3, 11, 5, 3); // tail
+    t.fillStyle = '#ffffff';
+    t.fillRect(1, 1, 14, 9);
+    t.fillRect(4, 11, 3, 1);
+    t.fillStyle = '#10121f';
+    for (const x of [3, 7, 11]) t.fillRect(x, 4, 2, 3); // "..." dots
+    this.refresh('ind-talk');
+  }
+
   private makeParticle(): void {
     const ctx = this.ctxFor('particle', 4, 4);
     ctx.fillStyle = '#ffffff';
@@ -409,6 +503,7 @@ export class BootScene extends Phaser.Scene {
     this.anims.create({ key: 'p-dash', frames: all('biker-dash'), frameRate: 20 });
     this.anims.create({ key: 'p-double', frames: all('biker-double'), frameRate: 14 });
     this.anims.create({ key: 'bullet-zip', frames: all('bullet'), frameRate: 20, repeat: -1 });
+    this.anims.create({ key: 'laser-zip', frames: all('laser'), frameRate: 24, repeat: -1 });
     this.anims.create({ key: 'muzzle-pop', frames: all('muzzle-flash'), frameRate: 30 });
     this.anims.create({ key: 'drone-hover', frames: all('drone'), frameRate: 8, repeat: -1 });
     this.anims.create({ key: 'screen-flicker', frames: all('wall-screen'), frameRate: 5, repeat: -1 });
