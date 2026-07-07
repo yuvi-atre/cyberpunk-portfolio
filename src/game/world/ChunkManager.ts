@@ -137,6 +137,10 @@ export class ChunkManager {
           if (rows[y][x] === Tile.HOLO_SIGN) {
             lights.push(this.scene.lights.addLight(wx, wy, 120, 0x00f0ff, 0.7));
           }
+          // doorways glow so entrances read from across the street
+          if (rows[y][x] === Tile.DOOR) {
+            lights.push(this.scene.lights.addLight(wx, wy - 8, 100, 0x00f0ff, 0.5));
+          }
         }
       }
     }

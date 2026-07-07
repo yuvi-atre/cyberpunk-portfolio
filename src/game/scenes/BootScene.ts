@@ -283,6 +283,22 @@ export class BootScene extends Phaser.Scene {
       c.fillRect(4, 6, T - 8, T - 10);
     });
 
+    // doors get emissive cyan trim so they read as enterable, not as more
+    // wall — the factory transom/leaf art alone blends into panel facades
+    inCell(Tile.DOOR, (c) => {
+      c.fillStyle = 'rgba(0, 240, 255, 0.10)';
+      c.fillRect(3, 0, T - 6, T);
+      c.fillStyle = '#00f0ff';
+      c.fillRect(2, 0, 2, T);
+      c.fillRect(T - 4, 0, 2, T);
+    });
+    inCell(Tile.DOOR_TOP, (c) => {
+      c.fillStyle = 'rgba(0, 240, 255, 0.10)';
+      c.fillRect(3, 10, T - 6, T - 10);
+      c.fillStyle = '#00f0ff';
+      c.fillRect(3, 8, T - 6, 2);
+    });
+
     // data cache: first frame of the industrial chest animation
     const cacheImg = this.textures.get('cache').getSourceImage() as CanvasImageSource;
     ctx.drawImage(cacheImg, 0, 0, T, T, cellX(Tile.CACHE), 1, T, T);
