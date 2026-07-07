@@ -108,9 +108,10 @@ export function buildCityMap(): CityWorld {
     fill(R, TOP + 1, R, S - 1, Tile.PANEL); // right wall
     // upper-floor slab with a jump-up gap on the right
     fill(L + 1, S - 6, L + 12, S - 6, Tile.BEAM);
-    // back-wall windows (non-colliding dressing on the wall layer)
-    for (const wx of [17, 21, 25]) fillWall(wx, S - 9, wx, S - 8, Tile.WALL_WINDOW);
-    for (const wx of [18, 26]) fillWall(wx, S - 4, wx, S - 3, Tile.WALL_WINDOW);
+    // back-wall windows (non-colliding dressing on the wall layer) — a
+    // dense inhabited grid, not lonely singles
+    for (const wx of [16, 18, 20, 22, 24, 26]) fillWall(wx, S - 9, wx, S - 8, Tile.WALL_WINDOW);
+    for (const wx of [17, 20, 23, 26]) fillWall(wx, S - 4, wx, S - 3, Tile.WALL_WINDOW);
     // ground-floor archways, dressed with door frames
     set(L, S - 2, Tile.DOOR_TOP);
     set(L, S - 1, Tile.DOOR);
@@ -125,6 +126,11 @@ export function buildCityMap(): CityWorld {
     mark('project', 'apartment', 22, S - 1);
     mark('npc', 'mentor-apartment', 18, S - 1);
     mark('billboard', 'sm-1', 22, TOP - 1);
+    // rooftop guard rails flanking the billboard + hallway posters
+    fill(L + 1, TOP - 1, L + 6, TOP - 1, Tile.RAIL);
+    fill(R - 6, TOP - 1, R - 1, TOP - 1, Tile.RAIL);
+    mark('billboard', 'poster-05', 17, S - 1);
+    mark('billboard', 'poster-11', 25, S - 1);
   }
 
   // ---- residential street ----
@@ -140,6 +146,7 @@ export function buildCityMap(): CityWorld {
   const stall = (L: number, R: number) => {
     fillWall(L, S - 5, R, S - 1, Tile.WALL_PANEL);
     fill(L - 1, S - 5, R + 1, S - 5, Tile.AWNING); // overhanging awning roof
+    fill(L + 1, S - 4, R - 1, S - 4, Tile.SHOP_GLASS); // glass display band over the aisle
     fill(L, S - 4, L, S - 1, Tile.SHOPFRONT);
     fill(R, S - 4, R, S - 1, Tile.SHOPFRONT);
     set(L, S - 1, Tile.DOOR);
@@ -148,6 +155,11 @@ export function buildCityMap(): CityWorld {
   };
   stall(46, 52);
   stall(58, 64);
+  // ads over the awnings and pasted inside the aisles
+  mark('billboard', 'sq-13', 50, S - 6);
+  mark('billboard', 'sq-14', 60, S - 6);
+  mark('billboard', 'poster-02', 48, S - 1);
+  mark('billboard', 'poster-12', 62, S - 1);
   set(49, S - 6, Tile.BOARD); // hanging shop board above stall A
   set(43, S - 1, Tile.HOLO_SIGN);
   mark('sign', 'sign-market', 43, S - 1);
@@ -171,8 +183,15 @@ export function buildCityMap(): CityWorld {
     fill(L, TOP, R, TOP, Tile.BEAM); // roof
     fill(L, TOP + 1, L, S - 1, Tile.PANEL_X);
     fill(R, TOP + 1, R, S - 1, Tile.PANEL_X);
-    // hazard trim under the roofline
+    // hazard trim under the roofline, service pipes slung beneath it
     fill(L + 1, TOP + 1, R - 1, TOP + 1, Tile.HAZARD);
+    fill(L + 2, TOP + 2, 89, TOP + 2, Tile.PIPE_H);
+    set(90, TOP + 2, Tile.PIPE_X);
+    fill(91, TOP + 2, 97, TOP + 2, Tile.PIPE_H);
+    set(98, TOP + 2, Tile.PIPE_X);
+    fill(99, TOP + 2, R - 2, TOP + 2, Tile.PIPE_H);
+    // lit control-room windows over the catwalks
+    for (const wx of [86, 94, 102]) fillWall(wx, TOP + 3, wx + 1, TOP + 4, Tile.WALL_WINDOW);
     // archways at both ends
     set(L, S - 2, Tile.DOOR_TOP);
     set(L, S - 1, Tile.DOOR);
@@ -191,6 +210,11 @@ export function buildCityMap(): CityWorld {
     mark('shard', 'python', 87, S - 7);
     mark('shard', 'sql', 99, S - 7);
     mark('shard', 'docker', 105, S - 3);
+    // pasted-up posters inside the hall and over the gate columns
+    mark('billboard', 'poster-01', 89, S - 1);
+    mark('billboard', 'poster-09', 97, S - 1);
+    mark('billboard', 'poster-14', L, S - 4);
+    mark('billboard', 'poster-13', R, S - 4);
   }
 
   // ---- corporate plaza ----
@@ -209,15 +233,32 @@ export function buildCityMap(): CityWorld {
     const LOBBY_CEIL = S - 7; // y 25; lobby air 26..31
     fillWall(L, ROOF, R, S - 1, Tile.WALL_DARK);
     fill(L, ROOF, R, ROOF, Tile.BEAM); // crown
+    // crown dressing: guard rails + a beacon antenna
+    fill(L + 2, ROOF - 1, 126, ROOF - 1, Tile.RAIL);
+    fill(130, ROOF - 1, R - 2, ROOF - 1, Tile.RAIL);
+    set(128, ROOF - 1, Tile.GIRDER);
+    set(128, ROOF - 2, Tile.GIRDER);
+    set(128, ROOF - 3, Tile.NEON_LAMP);
     fill(L, ROOF + 1, L, S - 1, Tile.PANEL); // outer walls, full height
     fill(R, ROOF + 1, R, S - 1, Tile.PANEL);
     fill(L + 1, DECK_FLOOR, R - 1, DECK_FLOOR, Tile.BEAM); // deck floor
     fill(L + 1, LOBBY_CEIL, R - 1, LOBBY_CEIL, Tile.BEAM); // lobby ceiling
-    // solid mid-rise body with a lit window facade (never walked on)
+    // solid mid-rise body (never walked on): banded curtain wall — window
+    // rows alternating with vent/lit-panel service rows, dense like a real
+    // city block instead of flat panel fill
     fill(L + 1, DECK_FLOOR + 1, R - 1, LOBBY_CEIL - 1, Tile.PANEL);
-    for (const wx of [121, 124, 127, 130, 133, 136]) {
-      for (let wy = DECK_FLOOR + 2; wy <= LOBBY_CEIL - 2; wy += 2) set(wx, wy, Tile.WINDOW);
+    fill(L + 1, DECK_FLOOR + 1, R - 1, DECK_FLOOR + 1, Tile.PANEL_X);
+    fill(L + 1, LOBBY_CEIL - 1, R - 1, LOBBY_CEIL - 1, Tile.PANEL_X);
+    for (let wy = DECK_FLOOR + 2; wy <= LOBBY_CEIL - 2; wy += 3) {
+      for (let wx = L + 2; wx <= R - 2; wx += 2) set(wx, wy, Tile.WINDOW_BIG);
+      if (wy + 1 <= LOBBY_CEIL - 2) {
+        for (const wx of [121, 128, 135]) set(wx, wy + 1, Tile.VENT);
+        for (const wx of [124, 132]) set(wx, wy + 1, Tile.PANEL_LIT);
+      }
     }
+    // ads bolted straight over the curtain wall, promo-shot style
+    mark('billboard', 'sq-09', 122, DECK_FLOOR + 7);
+    mark('billboard', 'sq-15', 134, DECK_FLOOR + 11);
     // deck dressing: back-wall windows overlooking the city
     for (const wx of [122, 126, 130, 134]) fillWall(wx, 6, wx, 7, Tile.WALL_WINDOW);
     // lobby archways
@@ -240,6 +281,11 @@ export function buildCityMap(): CityWorld {
     set(120, 6, Tile.LAMP_WHITE);
     mark('project', 'megacorp', 133, 8);
     mark('shard', 'aws', 124, 6);
+    // lobby posters + gate-column ads
+    mark('billboard', 'poster-07', 121, S - 1);
+    mark('billboard', 'poster-03', 135, S - 1);
+    mark('billboard', 'poster-06', L, S - 4);
+    mark('billboard', 'poster-10', R, S - 4);
   }
 
   // ---- exclusion edge: curated wreckage + future-goals cache ----

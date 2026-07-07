@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { EventBus, GameEvents } from '../EventBus';
 import { buildCityMap, SURFACE_Y, type CityWorld, type WorldMarker } from '../world/CityMap';
 import { ChunkManager } from '../world/ChunkManager';
-import { SHARD_COLORS, TILE_SIZE } from '../world/Tiles';
+import { SHARD_COLORS, SOLID_TILES, TILE_SIZE } from '../world/Tiles';
 import { Player } from '../entities/Player';
 import { NPC } from '../entities/NPC';
 import { Drone } from '../entities/Drone';
@@ -12,9 +12,11 @@ import { NPC_TEXTURES } from './BootScene';
 import { GAME_ZOOM } from '../main';
 
 const INTERACT_RADIUS_PX = 3 * TILE_SIZE;
-const BULLET_LIFE_MS = 900;
 const SHARD_TOUCH_RADIUS = 26;
-const SHARD_SHOT_RADIUS = 20;
+const LASER_RANGE_PX = 20 * TILE_SIZE;
+const LASER_STEP_PX = 8;
+const LASER_HIT_RADIUS = 14;
+const LASER_LIFE_MS = 130;
 
 interface Interactable {
   kind: 'npc' | 'sign' | 'project' | 'chest' | 'elevator';
@@ -23,6 +25,8 @@ interface Interactable {
   x: number;
   y: number;
   sprite?: NPC;
+  /** floating affordance glyph — talk bubble for NPCs, chevron otherwise */
+  indicator?: Phaser.GameObjects.Image;
 }
 
 interface Shard {
@@ -41,7 +45,6 @@ export class GameScene extends Phaser.Scene {
   private world!: CityWorld;
   private chunks!: ChunkManager;
   private player!: Player;
-  private bullets!: Phaser.Physics.Arcade.Group;
   private npcs: NPC[] = [];
   private shards: Shard[] = [];
   private interactables: Interactable[] = [];
@@ -79,28 +82,17 @@ export class GameScene extends Phaser.Scene {
 
     this.parallax = new ParallaxBackground(this);
 
-    // bullet pool — recycled sprites, gravity-free, collide with terrain
-    this.bullets = this.physics.add.group({
-      defaultKey: 'bullet',
-      maxSize: 16,
-      allowGravity: false,
-    });
-
     this.player = new Player(
       this,
       this.world.spawn.tx * TILE_SIZE + 16,
       this.world.spawn.ty * TILE_SIZE,
-      this.bullets
+      (mx, my, angle) => this.fireLaser(mx, my, angle)
     );
 
     this.spawnFromMarkers();
 
-    // chunk streaming (collides player, NPCs and bullets with terrain)
-    this.chunks = new ChunkManager(this, this.world, [
-      this.player,
-      ...this.npcs,
-      this.bullets,
-    ]);
+    // chunk streaming (collides player and NPCs with terrain)
+    this.chunks = new ChunkManager(this, this.world, [this.player, ...this.npcs]);
 
     const cam = this.cameras.main;
     // clamp the view a few rows below street level so the frame stays on
@@ -182,6 +174,7 @@ export class GameScene extends Phaser.Scene {
             x: px,
             y: py,
             sprite: npc,
+            indicator: this.makeIndicator('npc', px, py - 56),
           });
           break;
         }
@@ -205,7 +198,14 @@ export class GameScene extends Phaser.Scene {
           this.placeBillboard(m.id, px, py + 16);
           break;
         case 'sign':
-          this.interactables.push({ kind: 'sign', id: m.id, label: 'Read holo-sign', x: px, y: py });
+          this.interactables.push({
+            kind: 'sign',
+            id: m.id,
+            label: 'Read holo-sign',
+            x: px,
+            y: py,
+            indicator: this.makeIndicator('sign', px, py - 40),
+          });
           break;
         case 'project': {
           const project = PortfolioService.projectByStructure(m.id);
@@ -217,11 +217,19 @@ export class GameScene extends Phaser.Scene {
             label: `View project: ${project.name}`,
             x: px,
             y: py,
+            indicator: this.makeIndicator('project', px, py - 40),
           });
           break;
         }
         case 'chest':
-          this.interactables.push({ kind: 'chest', id: m.id, label: 'Access data cache', x: px, y: py });
+          this.interactables.push({
+            kind: 'chest',
+            id: m.id,
+            label: 'Access data cache',
+            x: px,
+            y: py,
+            indicator: this.makeIndicator('chest', px, py - 40),
+          });
           break;
         case 'shard': {
           // tint index follows the skills array so the inventory swatches match
@@ -239,6 +247,7 @@ export class GameScene extends Phaser.Scene {
             label: 'Take the elevator',
             x: px,
             y: py,
+            indicator: this.makeIndicator('elevator', px, py - 40),
           });
           break;
         }
@@ -281,6 +290,32 @@ export class GameScene extends Phaser.Scene {
       .image(px, py - (size === 'lg' ? 24 : 26), `ad-${id}`)
       .setOrigin(0.5, 1)
       .setDepth(13);
+  }
+
+  /**
+   * Floating affordance glyph: cyan talk bubble for NPCs, amber chevron for
+   * everything else. NPC bubbles are repositioned every frame as they
+   * patrol; static markers get a gentle bob tween instead. Indicators stay
+   * on the default pipeline so they read bright against the night.
+   */
+  private makeIndicator(kind: Interactable['kind'], x: number, y: number): Phaser.GameObjects.Image {
+    const talk = kind === 'npc';
+    const ind = this.add
+      .image(x, y, talk ? 'ind-talk' : 'ind-arrow')
+      .setDepth(26)
+      .setTint(talk ? 0x7df9ff : 0xffb020)
+      .setAlpha(0.8);
+    if (!talk) {
+      this.tweens.add({
+        targets: ind,
+        y: y - 3,
+        duration: 700,
+        yoyo: true,
+        repeat: -1,
+        ease: 'sine.inOut',
+      });
+    }
+    return ind;
   }
 
   /** Project monument: a flickering wall screen on the ground + cyan glow. */
@@ -407,45 +442,88 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(600, () => emitter.destroy());
   }
 
-  /** Retire bullets on wall hits / timeout; collect shards they pass. */
-  private sweepBullets(): void {
-    const now = this.time.now;
-    for (const obj of this.bullets.getMatching('active', true)) {
-      const bullet = obj as Phaser.Physics.Arcade.Sprite;
-      const body = bullet.body as Phaser.Physics.Arcade.Body;
-      const hitWall =
-        body.blocked.left || body.blocked.right || body.blocked.up || body.blocked.down;
-      const expired = now - ((bullet.getData('bornAt') as number) ?? now) > BULLET_LIFE_MS;
-
-      let hitShard: Shard | null = null;
-      for (const shard of this.shards) {
-        if (
-          Phaser.Math.Distance.Between(bullet.x, bullet.y, shard.sprite.x, shard.sprite.y) <
-          SHARD_SHOT_RADIUS
-        ) {
-          hitShard = shard;
-          break;
-        }
+  /**
+   * Hitscan laser: march the ray to the first solid tile, stretch the
+   * guns-pack beam sprite across the whole line for a heartbeat, and
+   * collect every shard the beam grazes. No projectile physics at all.
+   */
+  private fireLaser(mx: number, my: number, angle: number): void {
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    let dist = LASER_RANGE_PX;
+    for (let d = LASER_STEP_PX; d <= LASER_RANGE_PX; d += LASER_STEP_PX) {
+      const tx = Math.floor((mx + cos * d) / TILE_SIZE);
+      const ty = Math.floor((my + sin * d) / TILE_SIZE);
+      if (SOLID_TILES.includes(this.chunks.getTile(tx, ty))) {
+        dist = d;
+        break;
       }
+    }
+    const hx = mx + cos * dist;
+    const hy = my + sin * dist;
 
-      if (hitShard) this.collectShard(hitShard);
-      if (hitWall) this.burstParticles(bullet.x, bullet.y, 0x7df9ff);
-      if (hitWall || expired || hitShard) {
-        bullet.disableBody(true, true);
+    const beam = this.add
+      .sprite(mx, my, 'laser', 0)
+      .setOrigin(0, 0.5)
+      .setRotation(angle)
+      .setDepth(22)
+      .setTint(0x7df9ff)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    beam.displayWidth = dist;
+    beam.play('laser-zip');
+    this.tweens.add({
+      targets: beam,
+      alpha: 0,
+      duration: LASER_LIFE_MS,
+      ease: 'quad.in',
+      onComplete: () => beam.destroy(),
+    });
+
+    // impact flash where the beam bites the wall
+    if (dist < LASER_RANGE_PX) {
+      this.burstParticles(hx, hy, 0x7df9ff);
+      if (this.useLights) {
+        const light = this.lights.addLight(hx, hy, 120, 0x7df9ff, 1.0);
+        this.time.delayedCall(90, () => this.lights.removeLight(light));
+      }
+    }
+
+    // the beam collects every shard it grazes, not just the first
+    for (const shard of [...this.shards]) {
+      if (
+        this.distToSegment(shard.sprite.x, shard.sprite.y, mx, my, hx, hy) < LASER_HIT_RADIUS
+      ) {
+        this.collectShard(shard);
       }
     }
   }
 
+  /** Distance from point (px,py) to the segment (ax,ay)-(bx,by). */
+  private distToSegment(px: number, py: number, ax: number, ay: number, bx: number, by: number): number {
+    const dx = bx - ax;
+    const dy = by - ay;
+    const lenSq = dx * dx + dy * dy;
+    const t = lenSq === 0 ? 0 : Phaser.Math.Clamp(((px - ax) * dx + (py - ay) * dy) / lenSq, 0, 1);
+    return Phaser.Math.Distance.Between(px, py, ax + t * dx, ay + t * dy);
+  }
+
   // ----------------------------------------------------------------- update
-  update(_time: number, delta: number): void {
+  update(time: number, delta: number): void {
     this.player.updatePlayer();
     this.chunks.update(this.cameras.main);
-    this.sweepBullets();
 
     // wake NPC physics once their terrain is streamed in (camera view + margin)
     const view = this.cameras.main.worldView;
     for (const npc of this.npcs) {
       if (!npc.activated && view.contains(npc.x, npc.y)) npc.activate();
+    }
+
+    // keep talk bubbles riding above their patrolling NPCs (manual bob —
+    // a y-tween would fight the per-frame follow)
+    for (const it of this.interactables) {
+      if (it.sprite && it.indicator) {
+        it.indicator.setPosition(it.sprite.x, it.sprite.y - 56 + Math.sin(time * 0.004) * 3);
+      }
     }
 
     // walking through a shard collects it too (touch devices, no-aim path)
@@ -469,6 +547,13 @@ export class GameScene extends Phaser.Scene {
       if (nearest !== this.currentHint) {
         this.currentHint = nearest;
         EventBus.emit(GameEvents.INTERACT_HINT, nearest ? nearest.label : null);
+      }
+      // the in-range interactable's glyph steps forward; the rest sit back
+      for (const it of this.interactables) {
+        if (!it.indicator) continue;
+        const focused = it === nearest;
+        it.indicator.setScale(focused ? 1.5 : 1);
+        it.indicator.setAlpha(focused ? 1 : 0.8);
       }
     }
   }

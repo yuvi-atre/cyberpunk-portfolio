@@ -26,6 +26,14 @@ import fenceUrl from '../../assets/craftpix/tiles/fence.png';
 import scrapUrl from '../../assets/craftpix/tiles/scrap.png';
 import lockerUrl from '../../assets/craftpix/tiles/locker.png';
 import boardUrl from '../../assets/craftpix/tiles/board.png';
+import ventUrl from '../../assets/craftpix/tiles/vent.png';
+import pipeHUrl from '../../assets/craftpix/tiles/pipe-h.png';
+import pipeVUrl from '../../assets/craftpix/tiles/pipe-v.png';
+import pipeXUrl from '../../assets/craftpix/tiles/pipe-x.png';
+import windowBigUrl from '../../assets/craftpix/tiles/window-big.png';
+import shopGlassUrl from '../../assets/craftpix/tiles/shop-glass.png';
+import panelLitUrl from '../../assets/craftpix/tiles/panel-lit.png';
+import railUrl from '../../assets/craftpix/tiles/rail.png';
 import wallPanelUrl from '../../assets/craftpix/tiles/wall-panel.png';
 import wallRivetUrl from '../../assets/craftpix/tiles/wall-rivet.png';
 import wallWindowUrl from '../../assets/craftpix/tiles/wall-window.png';
@@ -109,6 +117,14 @@ const TILE_SOURCES: Partial<Record<Tile, string>> = {
   [Tile.SCRAP]: 'tx-scrap',
   [Tile.LOCKER]: 'tx-locker',
   [Tile.BOARD]: 'tx-board',
+  [Tile.VENT]: 'tx-vent',
+  [Tile.PIPE_H]: 'tx-pipe-h',
+  [Tile.PIPE_V]: 'tx-pipe-v',
+  [Tile.PIPE_X]: 'tx-pipe-x',
+  [Tile.WINDOW_BIG]: 'tx-window-big',
+  [Tile.SHOP_GLASS]: 'tx-shop-glass',
+  [Tile.PANEL_LIT]: 'tx-panel-lit',
+  [Tile.RAIL]: 'tx-rail',
   [Tile.WALL_PANEL]: 'tx-wall-panel',
   [Tile.WALL_RIVET]: 'tx-wall-rivet',
   [Tile.WALL_WINDOW]: 'tx-wall-window',
@@ -141,6 +157,14 @@ const TILE_URLS: Record<string, string> = {
   'tx-scrap': scrapUrl,
   'tx-locker': lockerUrl,
   'tx-board': boardUrl,
+  'tx-vent': ventUrl,
+  'tx-pipe-h': pipeHUrl,
+  'tx-pipe-v': pipeVUrl,
+  'tx-pipe-x': pipeXUrl,
+  'tx-window-big': windowBigUrl,
+  'tx-shop-glass': shopGlassUrl,
+  'tx-panel-lit': panelLitUrl,
+  'tx-rail': railUrl,
   'tx-wall-panel': wallPanelUrl,
   'tx-wall-rivet': wallRivetUrl,
   'tx-wall-window': wallWindowUrl,
@@ -253,6 +277,10 @@ export class BootScene extends Phaser.Scene {
     inCell(Tile.WINDOW, (c) => {
       c.fillStyle = 'rgba(0, 240, 255, 0.16)';
       c.fillRect(6, 6, T - 12, T - 12);
+    });
+    inCell(Tile.WINDOW_BIG, (c) => {
+      c.fillStyle = 'rgba(232, 248, 255, 0.10)';
+      c.fillRect(4, 6, T - 8, T - 10);
     });
 
     // data cache: first frame of the industrial chest animation

@@ -48,9 +48,18 @@ export enum Tile {
   WALL_GRID = 33,
   WALL_SOIL = 34,
   WALL_METAL = 35,
+  // facade dressing — density pass (factory pack)
+  VENT = 36, // recessed vent square (solid, shell regions only)
+  PIPE_H = 37, // ceiling pipe runs — non-solid so jumps never bonk
+  PIPE_V = 38,
+  PIPE_X = 39,
+  WINDOW_BIG = 40, // twin-pane framed window (solid, tower body)
+  SHOP_GLASS = 41, // awning-headed glass display band (solid, above head height)
+  PANEL_LIT = 42, // framed panel with lit corner windows (solid, tower body)
+  RAIL = 43, // rooftop guard rail (non-solid dressing)
 }
 
-export const TILE_COUNT = 36;
+export const TILE_COUNT = 44;
 
 /** Tiles the player collides with. */
 export const SOLID_TILES: number[] = [
@@ -76,6 +85,10 @@ export const SOLID_TILES: number[] = [
   Tile.LOCKER,
   Tile.SUBSTRATE,
   Tile.CACHE,
+  Tile.VENT,
+  Tile.WINDOW_BIG,
+  Tile.SHOP_GLASS,
+  Tile.PANEL_LIT,
 ];
 
 /** Base palette per tile — drives bullet-impact particle colors. */
@@ -109,6 +122,14 @@ export const TILE_COLORS: Record<number, { base: string; accent: string; dark: s
   [Tile.HOLO_SIGN]: { base: '#102030', accent: '#00f0ff', dark: '#0a1420' },
   [Tile.CACHE]: { base: '#4c5570', accent: '#ffb020', dark: '#363d52' },
   [Tile.SUBSTRATE]: { base: '#1a1626', accent: '#241f33', dark: '#120f1c' },
+  [Tile.VENT]: { base: '#454e68', accent: '#5b6584', dark: '#323950' },
+  [Tile.PIPE_H]: { base: '#5d688c', accent: '#7d89b0', dark: '#434c6b' },
+  [Tile.PIPE_V]: { base: '#5d688c', accent: '#7d89b0', dark: '#434c6b' },
+  [Tile.PIPE_X]: { base: '#5d688c', accent: '#7d89b0', dark: '#434c6b' },
+  [Tile.WINDOW_BIG]: { base: '#3d4560', accent: '#e8f8ff', dark: '#2c3248' },
+  [Tile.SHOP_GLASS]: { base: '#3d4560', accent: '#ffb020', dark: '#2c3248' },
+  [Tile.PANEL_LIT]: { base: '#3d4560', accent: '#e8f8ff', dark: '#2c3248' },
+  [Tile.RAIL]: { base: '#c97b1e', accent: '#ffb020', dark: '#8a5414' },
 };
 
 /** Accent colors cycled across skill shards (index = skill order). */
