@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import gsap from 'gsap';
+import { prefersReducedMotion } from '../lib/motion';
 
 interface Props {
   children: ReactNode;
@@ -17,7 +18,7 @@ export function Modal({ children, onClose, maxWidth = 'max-w-lg' }: Props) {
   const backdropRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
-    if (!panelRef.current || !backdropRef.current) return;
+    if (!panelRef.current || !backdropRef.current || prefersReducedMotion()) return;
     gsap.fromTo(backdropRef.current, { opacity: 0 }, { opacity: 1, duration: 0.18, ease: 'power2.out' });
     gsap.fromTo(
       panelRef.current,

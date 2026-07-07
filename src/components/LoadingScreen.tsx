@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { EventBus, GameEvents } from '../game/EventBus';
 import { PortfolioService } from '../services/PortfolioService';
+import { prefersReducedMotion } from '../lib/motion';
 
 const MIN_DISPLAY_MS = 1200;
 
@@ -48,7 +49,7 @@ export function LoadingScreen({ onEnter }: { onEnter: () => void }) {
   }, []);
 
   useEffect(() => {
-    if (!cardRef.current) return;
+    if (!cardRef.current || prefersReducedMotion()) return;
     gsap.fromTo(
       cardRef.current.children,
       { y: 18, opacity: 0 },
@@ -58,6 +59,10 @@ export function LoadingScreen({ onEnter }: { onEnter: () => void }) {
 
   const enter = () => {
     if (!rootRef.current) return;
+    if (prefersReducedMotion()) {
+      onEnter();
+      return;
+    }
     gsap.to(rootRef.current, {
       opacity: 0,
       scale: 1.06,

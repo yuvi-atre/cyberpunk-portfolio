@@ -54,7 +54,28 @@ engineering role. Goal: polished, performant, and impossible to get lost in.
    CSS px (CraftPix promo density), pixel-crisp. Don't reintroduce
    fractional camera zooms; ParallaxBackground sizes its image pool from
    `scene.scale.width`, not a hardcoded viewport.
-8. **Neon pink/blue theme** in `src/styles/index.css`: `--neon-pink
+8. **World edges are hazard-capped barrier walls, not substrate pillars**
+   (2026-07-07, "black bar on the left" feedback): full-height SUBSTRATE
+   columns at x=0..1 / W-2..W-1 rendered as a black bar at the screen edge.
+   `CityMap.ts` now builds a short barrier per edge: PANEL_X body from S-6
+   to S-1 with a HAZARD cap row at S-7 — reads as deliberate "city limits."
+   Physics containment still comes from world bounds + the solid wall tiles.
+9. **Reduced-motion path** (2026-07-07): every GSAP entrance/exit tween is
+   gated behind `prefersReducedMotion()` from `src/lib/motion.ts`
+   (LoadingScreen enter/exit, Modal, ProjectModal stagger, RecruiterMode,
+   both toasts), and `styles/index.css` disables the grid-floor scroll,
+   glitch jitter, cursor blink and button transitions under
+   `@media (prefers-reduced-motion: reduce)`. Keep new tweens behind the
+   same gate. Verified end-to-end by forcing the media query and entering
+   the game — the gate must dismiss synchronously without GSAP.
+10. **Verification gotcha:** if the preview browser tab is hidden,
+   requestAnimationFrame never fires — Phaser's loader stalls after its
+   first 32 parallel files (queue is pumped on the frame step) and GSAP
+   onComplete callbacks never run. Pump manually via
+   `__game.loop.step(t += 16.7)` in a loop with increasing timestamps
+   (identical timestamps = zero delta = frozen physics), and use the
+   reduced-motion path to bypass GSAP-gated UI transitions.
+11. **Neon pink/blue theme** in `src/styles/index.css`: `--neon-pink
    #ff2d95`, `--neon-blue #00f0ff`, deep indigo surfaces (never pure
    black), zero border radius, Press Start 2P + VT323. Amber is reserved
    for loot moments only. Welcome screen = synthwave grid floor
