@@ -82,10 +82,16 @@ export function buildCityMap(): CityWorld {
     for (let y = S + 6; y < H - 2; y++)
       set(x, y, green ? Tile.DEEP_SOIL : metal ? Tile.METAL_DARK : Tile.DEEP_SOIL);
   }
-  // world shell: bottom slab + boundary pillars at both ends
+  // world shell: bottom slab + hazard-capped barrier walls at both ends.
+  // Short riveted walls read as deliberate "city limits"; the old full-height
+  // substrate pillars rendered as a black bar at the screen edge.
   fill(0, H - 2, W - 1, H - 1, Tile.SUBSTRATE);
-  fill(0, S - 8, 1, H - 1, Tile.SUBSTRATE);
-  fill(W - 2, S - 8, W - 1, H - 1, Tile.SUBSTRATE);
+  const barrier = (x0: number, x1: number) => {
+    fill(x0, S - 6, x1, S - 1, Tile.PANEL_X);
+    fill(x0, S - 7, x1, S - 7, Tile.HAZARD);
+  };
+  barrier(0, 1);
+  barrier(W - 2, W - 1);
 
   // ---- spawn plaza ----
   const spawn = { tx: 6, ty: S - 3 };

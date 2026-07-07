@@ -1,13 +1,14 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import type { Skill } from '../services/PortfolioService';
+import { prefersReducedMotion } from '../lib/motion';
 
-/** "Item pickup" banner when a data node is broken. */
+/** "Item pickup" banner when a skill shard is collected. */
 export function SkillToast({ skill, onDone }: { skill: Skill; onDone: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
-    if (ref.current) {
+    if (ref.current && !prefersReducedMotion()) {
       gsap.fromTo(
         ref.current,
         { y: -16, opacity: 0, scale: 0.95 },

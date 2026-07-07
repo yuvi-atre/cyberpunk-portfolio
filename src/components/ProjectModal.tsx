@@ -2,13 +2,14 @@ import { useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { Modal } from './Modal';
 import type { Project } from '../services/PortfolioService';
+import { prefersReducedMotion } from '../lib/motion';
 
 /** Monument interior: full project case study with staggered highlight reveal. */
 export function ProjectModal({ project, onClose }: { project: Project; onClose: () => void }) {
   const listRef = useRef<HTMLUListElement>(null);
 
   useLayoutEffect(() => {
-    if (!listRef.current) return;
+    if (!listRef.current || prefersReducedMotion()) return;
     gsap.fromTo(
       listRef.current.children,
       { x: -12, opacity: 0 },

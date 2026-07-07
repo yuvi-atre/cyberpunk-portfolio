@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { PortfolioService } from '../services/PortfolioService';
+import { prefersReducedMotion } from '../lib/motion';
 
 /**
  * Recruiter Mode: a zero-gameplay express lane. Pauses the game (App emits
@@ -12,7 +13,7 @@ export function RecruiterMode({ onClose }: { onClose: () => void }) {
   const gridRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
-    if (!rootRef.current || !gridRef.current) return;
+    if (!rootRef.current || !gridRef.current || prefersReducedMotion()) return;
     gsap.fromTo(rootRef.current, { opacity: 0 }, { opacity: 1, duration: 0.22, ease: 'power2.out' });
     gsap.fromTo(
       gridRef.current.children,

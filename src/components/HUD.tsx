@@ -24,8 +24,9 @@ export function HUD({
 }: Props) {
   return (
     <div className="pointer-events-none absolute inset-0 z-10">
-      {/* top-left identity */}
-      <div className="pixel-panel absolute left-3 top-3 px-4 py-3">
+      {/* top-left identity — capped width so it never collides with the
+          button row, which is inset to start at 240px */}
+      <div className="pixel-panel absolute left-3 top-3 max-w-[210px] px-4 py-3">
         <div className="font-display text-[10px] md:text-xs" style={{ color: 'var(--neon-pink)' }}>
           {personal.name}
         </div>

@@ -1,13 +1,14 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import gsap from 'gsap';
 import type { Sign } from '../services/PortfolioService';
+import { prefersReducedMotion } from '../lib/motion';
 
 /** Non-blocking holo tag for holographic signboards; auto-dismisses. */
 export function SignToast({ sign, onDone }: { sign: Sign; onDone: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
-    if (ref.current) {
+    if (ref.current && !prefersReducedMotion()) {
       gsap.fromTo(ref.current, { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: 'power2.out' });
     }
   }, [sign.id]);

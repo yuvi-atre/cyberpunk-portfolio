@@ -256,6 +256,25 @@ canvas {
   }
 }
 
+/* Accessibility: a clean static path for prefers-reduced-motion. GSAP
+   tweens are gated in JS (src/lib/motion.ts); this covers the CSS side. */
+@media (prefers-reduced-motion: reduce) {
+  .grid-floor,
+  .glitch-title,
+  .type-cursor {
+    animation: none;
+  }
+  .type-cursor {
+    opacity: 1;
+  }
+  .pixel-btn,
+  .pixel-btn:hover,
+  .pixel-btn:active {
+    transition: none;
+    transform: none;
+  }
+}
+
 /* Touch controls */
 .touch-btn {
   font-family: var(--font-display);
