@@ -246,8 +246,28 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  /** Billboard frame + glowing ad face + a neon wash light. */
+  /**
+   * Street advertising, dispatched on the marker id:
+   *   "poster-NN" — a flat paper ad pasted straight onto the wall
+   *   "sq-NN"     — square wall billboard frame + glowing ad face NN
+   *   "lg-N"/"sm-N" — the classic framed billboards
+   * Ad faces stay unlit so they glow against the night.
+   */
   private placeBillboard(id: string, px: number, py: number): void {
+    if (id.startsWith('poster-')) {
+      const poster = this.add.image(px, py, id).setOrigin(0.5, 1).setDepth(11);
+      if (this.useLights) poster.setPipeline('Light2D');
+      return;
+    }
+    if (id.startsWith('sq-')) {
+      const frame = this.add.image(px, py, 'billboard-sq').setOrigin(0.5, 1).setDepth(12);
+      if (this.useLights) {
+        frame.setPipeline('Light2D');
+        this.lights.addLight(px, py - 35, 130, 0x6bd7ff, 0.5);
+      }
+      this.add.image(px, py - 3, `adsq-${id.slice(3)}`).setOrigin(0.5, 1).setDepth(13);
+      return;
+    }
     const size = id.startsWith('lg') ? 'lg' : 'sm';
     const frame = this.add
       .image(px, py, `billboard-${size}`)
@@ -257,7 +277,6 @@ export class GameScene extends Phaser.Scene {
       frame.setPipeline('Light2D');
       this.lights.addLight(px, py - 30, 150, 0x6bd7ff, 0.55);
     }
-    // the ad face stays unlit so it glows against the night
     this.add
       .image(px, py - (size === 'lg' ? 24 : 26), `ad-${id}`)
       .setOrigin(0.5, 1)
